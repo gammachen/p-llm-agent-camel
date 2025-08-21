@@ -8,10 +8,10 @@ from typing import Dict, Any, List
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, ModelType, RoleType
 from camel.configs import ChatGPTConfig
 from camel.agents import TaskSpecifyAgent, TaskPlannerAgent
-# Remove the incorrect imports and use the correct ones from camel.messages.BaseMessage
+from camel.societies import RolePlaying
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -86,8 +86,8 @@ def create_agent(role_type: str, model) -> ChatAgent:
 
 def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     """
-    Travel planning conversation flow using CAMEL-AI framework with multiple roles.
-    使用CAMEL-AI框架的多角色旅行规划对话流程
+    Travel planning conversation flow using CAMEL-AI framework with RolePlaying society.
+    使用CAMEL-AI框架的RolePlaying社会进行旅行规划对话流程
     
     Args:
         user_request: User's travel request
@@ -97,7 +97,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
         Final travel plan response
         最终旅行计划响应
     """
-    logger.info(f"Starting multi-role travel planning conversation for request: {user_request}")
+    logger.info(f"Starting CAMEL RolePlaying travel planning conversation for request: {user_request}")
     
     # Setup model
     # 设置模型
@@ -121,9 +121,6 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
             model_config_dict=ChatGPTConfig(temperature=0.7, max_tokens=2000).as_dict()
         )
     
-    # Create a more sophisticated CAMEL interaction
-    # 创建更复杂的CAMEL交互
-    
     # 1. Use TaskSpecifyAgent to clarify the task
     # 1. 使用TaskSpecifyAgent明确任务
     logger.debug("Creating task specify agent")
@@ -131,77 +128,101 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     specified_task = task_specify_agent.run(user_request, meta_dict={"domain": "travel planning"})
     logger.info(f"Specified task: {specified_task}")
     
-    # 2. Use TaskPlannerAgent to break down the task
-    # 2. 使用TaskPlannerAgent分解任务
-    logger.debug("Creating task planner agent")
-    task_planner_agent = TaskPlannerAgent(model)
-    planned_tasks = task_planner_agent.run(specified_task)
-    logger.info(f"Planned tasks: {planned_tasks}")
+    # 2. Create RolePlaying society for multi-agent collaboration
+    # 2. 创建RolePlaying社会进行多智能体协作
+    logger.debug("Creating RolePlaying society")
     
-    # 3. Create specialized agents for each role
-    # 3. 为每个角色创建专门的Agent
-    logger.debug("Creating specialized agents")
-    travel_planner_agent = create_agent("travel_planner", model)
-    local_guide_agent = create_agent("local_guide", model)
-    budget_advisor_agent = create_agent("budget_advisor", model)
+    # Define assistant and user roles for the conversation
+    # 定义对话中的助手和用户角色
+    assistant_role_name = "TravelPlanningExpert"
+    user_role_name = "TravelClient"
     
-    # No need to create separate user and assistant agents as we're using ChatAgent directly
-    # 不需要单独创建用户和助手Agent，因为我们直接使用ChatAgent
-    
-    # 6. Initiate a conversation between agents
-    # 6. 启动Agent之间的对话
-    logger.info("Initiating conversation between agents")
-    
-    # Start with user message
-    # 从用户消息开始
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=specified_task
+    # Create system messages for both roles
+    # 为两个角色创建系统消息
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name=assistant_role_name,
+        content=(
+            "你是一个专业的旅行规划专家团队，包含以下三个专家：\n"
+            "1. 旅行规划师：负责制定详细的行程安排和目的地推荐\n"
+            "2. 当地向导：提供目的地的文化、美食和景点信息\n"
+            "3. 预算顾问：制定合理的旅行预算和费用优化建议\n"
+            "请以团队协作的方式，为客户提供全面的旅行规划服务。"
+        )
     )
     
-    # Collect responses from all agents through conversation
-    # 通过对话收集所有Agent的响应
-
-    results = {}
-    
-    # Get travel planner response
-    # 获取旅行规划师响应
-    logger.debug("Getting travel planner response")
-    travel_response = travel_planner_agent.step(user_msg)
-    if travel_response.msgs:
-        results["destination_planning"] = travel_response.msgs[0].content
-    
-    # Get local guide response based on travel planner's input
-    # 基于旅行规划师的输入获取当地向导响应
-    logger.debug("Getting local guide response")
-    local_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=f"基于以下旅行计划，请提供当地文化和美食建议：{results.get('destination_planning', '')}"
+    user_sys_msg = BaseMessage.make_user_message(
+        role_name=user_role_name,
+        content=(
+            "你是一位寻求专业旅行规划服务的客户。你会提出具体的旅行需求，"
+            "并与旅行专家团队进行互动，以获得最佳的旅行方案。"
+        )
     )
-    local_response = local_guide_agent.step(local_msg)
-    if local_response.msgs:
-        results["local_guidance"] = local_response.msgs[0].content
     
-    # Get budget advisor response based on travel plan
-    # 基于旅行计划获取预算顾问响应
-    logger.debug("Getting budget advisor response")
-    budget_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=f"基于以下旅行计划，请提供预算建议：{results.get('destination_planning', '')}"
+    # Create the RolePlaying society
+    # 创建RolePlaying社会
+    role_play_session = RolePlaying(
+        assistant_role_name=assistant_role_name,
+        user_role_name=user_role_name,
+        assistant_agent_kwargs=dict(
+            model=model
+        ),
+        user_agent_kwargs=dict(
+            model=model
+        ),
+        task_prompt=specified_task,
+        with_task_specify=False,  # We already specified the task
+        with_task_planner=False,  # We'll handle planning within the conversation
     )
-    budget_response = budget_advisor_agent.step(budget_msg)
-    if budget_response.msgs:
-        results["budget_planning"] = budget_response.msgs[0].content
     
-    # 7. Synthesize results from all agents
-    # 7. 综合所有Agent的结果
-    logger.info("Synthesizing results from all agents")
-    final_response = synthesize_results(results, user_request)
+    logger.info("Starting RolePlaying conversation")
     
-    logger.info("Multi-role travel planning conversation completed")
+    # Initialize the conversation
+    # 初始化对话
+    input_msg = role_play_session.init_chat()
+    
+    # Run the conversation for several turns to get comprehensive planning
+    # 运行多轮对话以获得全面的规划
+    conversation_history = []
+    max_turns = 6  # Limit conversation turns
+    
+    for turn in range(max_turns):
+        logger.debug(f"Conversation turn {turn + 1}")
+        
+        # Get assistant response
+        # 获取助手响应
+        assistant_response, user_msg = role_play_session.step(input_msg)
+        
+        if assistant_response.terminated:
+            logger.info("Conversation terminated by assistant")
+            break
+            
+        conversation_history.append({
+            "turn": turn + 1,
+            "assistant": assistant_response.msg.content if assistant_response.msg else "",
+            "user": user_msg.msgs[0].content if user_msg and user_msg.msgs else ""
+        })
+        
+        # Use the user message as input for next turn
+        # 使用用户消息作为下一轮的输入
+        input_msg = user_msg
+        
+        # Break if user message indicates completion
+        # 如果用户消息表示完成则中断
+        if user_msg and ("完成" in user_msg.content or "满意" in user_msg.content or "谢谢" in user_msg.content):
+            logger.info("Conversation completed by user satisfaction")
+            break
+    
+    # Extract the final comprehensive response
+    # 提取最终的综合响应
+    if conversation_history:
+        final_response = conversation_history[-1]["assistant"]
+    else:
+        final_response = "抱歉，无法生成旅行规划。请稍后重试。"
+    
+    logger.info("CAMEL RolePlaying travel planning conversation completed")
     return {
         "response": final_response,
-        "details": results,
+        "conversation_history": conversation_history,
         "status": "success"
     }
 
