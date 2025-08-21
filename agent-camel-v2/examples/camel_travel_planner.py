@@ -10,6 +10,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.configs import ChatGPTConfig
+from camel.agents import TaskSpecifyAgent, TaskPlannerAgent, AssistantAgent, UserAgent
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -82,44 +83,6 @@ def create_agent(role_type: str, model) -> ChatAgent:
     logger.debug(f"Agent {role_info['role_name']} created successfully")
     return agent
 
-def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
-    """
-    Execute a task with the given agent.
-    使用给定Agent执行任务
-    
-    Args:
-        agent: ChatAgent to execute the task
-           执行任务的ChatAgent
-        task_description: Description of the task
-                    任务描述
-        
-    Returns:
-        Task execution result
-        任务执行结果
-    """
-    logger.info(f"Executing task with agent {agent.role_name}")
-    
-    # Create user message
-    # 创建用户消息
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=task_description
-    )
-    
-    # Get response from agent
-    # 从Agent获取响应
-    logger.debug(f"Sending task to agent {agent.role_name}: {task_description}")
-    response = agent.step(user_msg)
-    logger.debug(f"Received response from agent {agent.role_name}")
-    
-    if response.msgs:
-        result_content = response.msgs[0].content
-        logger.info(f"Task executed successfully by agent {agent.role_name} with result: {result_content}")
-        return result_content
-    else:
-        logger.warning(f"Failed to execute task with agent {agent.role_name}")
-        return f"抱歉，{agent.role_name}无法生成响应，请稍后重试。"
-
 def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     """
     Travel planning conversation flow using CAMEL-AI framework with multiple roles.
@@ -157,44 +120,107 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
             model_config_dict=ChatGPTConfig(temperature=0.7, max_tokens=2000).as_dict()
         )
     
-    # Create agents for different roles
-    # 为不同角色创建Agent
-    logger.debug("Creating agents for different roles")
+    # Create a more sophisticated CAMEL interaction
+    # 创建更复杂的CAMEL交互
+    
+    # 1. Use TaskSpecifyAgent to clarify the task
+    # 1. 使用TaskSpecifyAgent明确任务
+    logger.debug("Creating task specify agent")
+    task_specify_agent = TaskSpecifyAgent(model)
+    specified_task = task_specify_agent.run(user_request, meta_dict={"domain": "travel planning"})
+    logger.info(f"Specified task: {specified_task}")
+    
+    # 2. Use TaskPlannerAgent to break down the task
+    # 2. 使用TaskPlannerAgent分解任务
+    logger.debug("Creating task planner agent")
+    task_planner_agent = TaskPlannerAgent(model)
+    planned_tasks = task_planner_agent.run(specified_task)
+    logger.info(f"Planned tasks: {planned_tasks}")
+    
+    # 3. Create specialized agents for each role
+    # 3. 为每个角色创建专门的Agent
+    logger.debug("Creating specialized agents")
     travel_planner_agent = create_agent("travel_planner", model)
     local_guide_agent = create_agent("local_guide", model)
     budget_advisor_agent = create_agent("budget_advisor", model)
     
-    # Break down the user request into subtasks
-    # 将用户请求分解为子任务
-    logger.info("Breaking down user request into subtasks")
-    subtasks = {
-        "destination_planning": f"请根据用户需求'{user_request}'规划旅行目的地，包括推荐地点和行程安排。",
-        "local_guidance": f"针对用户需求'{user_request}'，提供目的地的当地文化和美食建议。",
-        "budget_planning": f"根据用户需求'{user_request}'，制定旅行预算计划，包括各项费用估算。"
-    }
+    # 4. Create a user agent to simulate the user
+    # 4. 创建用户Agent来模拟用户
+    logger.debug("Creating user agent")
+    user_sys_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=(f"请根据以下任务规划旅行：{specified_task}\n"
+                f"任务分解如下：{planned_tasks}")
+    )
+    user_agent = UserAgent(user_sys_msg)
     
-    # Execute tasks with respective agents
-    # 使用相应的Agent执行任务
-    logger.info("Executing subtasks with respective agents")
+    # 5. Set up assistant agents for each role
+    # 5. 为每个角色设置助手Agent
+    logger.debug("Creating assistant agents")
+    assistant_sys_msg_travel = BaseMessage.make_assistant_message(
+        role_name="TravelPlanner",
+        content=travel_roles["travel_planner"]["role_description"]
+    )
+    travel_assistant = AssistantAgent(assistant_sys_msg_travel, model)
+    
+    assistant_sys_msg_local = BaseMessage.make_assistant_message(
+        role_name="LocalGuide", 
+        content=travel_roles["local_guide"]["role_description"]
+    )
+    local_assistant = AssistantAgent(assistant_sys_msg_local, model)
+    
+    assistant_sys_msg_budget = BaseMessage.make_assistant_message(
+        role_name="BudgetAdvisor",
+        content=travel_roles["budget_advisor"]["role_description"]
+    )
+    budget_assistant = AssistantAgent(assistant_sys_msg_budget, model)
+    
+    # 6. Initiate a conversation between agents
+    # 6. 启动Agent之间的对话
+    logger.info("Initiating conversation between agents")
+    
+    # Start with user message
+    # 从用户消息开始
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=specified_task
+    )
+    
+    # Collect responses from all agents through conversation
+    # 通过对话收集所有Agent的响应
     results = {}
     
-    results["destination_planning"] = execute_agent_task(
-        travel_planner_agent, 
-        subtasks["destination_planning"]
-    )
+    # Get travel planner response
+    # 获取旅行规划师响应
+    logger.debug("Getting travel planner response")
+    travel_response = travel_planner_agent.step(user_msg)
+    if travel_response.msgs:
+        results["destination_planning"] = travel_response.msgs[0].content
     
-    results["local_guidance"] = execute_agent_task(
-        local_guide_agent, 
-        subtasks["local_guidance"]
+    # Get local guide response based on travel planner's input
+    # 基于旅行规划师的输入获取当地向导响应
+    logger.debug("Getting local guide response")
+    local_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=f"基于以下旅行计划，请提供当地文化和美食建议：{results.get('destination_planning', '')}"
     )
+    local_response = local_guide_agent.step(local_msg)
+    if local_response.msgs:
+        results["local_guidance"] = local_response.msgs[0].content
     
-    results["budget_planning"] = execute_agent_task(
-        budget_advisor_agent, 
-        subtasks["budget_planning"]
+    # Get budget advisor response based on travel plan
+    # 基于旅行计划获取预算顾问响应
+    logger.debug("Getting budget advisor response")
+    budget_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=f"基于以下旅行计划，请提供预算建议：{results.get('destination_planning', '')}"
     )
+    budget_response = budget_advisor_agent.step(budget_msg)
+    if budget_response.msgs:
+        results["budget_planning"] = budget_response.msgs[0].content
     
-    # Synthesize results from all agents
-    # 综合所有Agent的结果
+    # 7. Synthesize results from all agents
+    # 7. 综合所有Agent的结果
     logger.info("Synthesizing results from all agents")
     final_response = synthesize_results(results, user_request)
     
@@ -237,6 +263,44 @@ def synthesize_results(results: Dict[str, str], user_request: str) -> str:
     
     logger.debug("Results synthesized successfully")
     return response_text
+
+def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
+    """
+    Execute a task with the given agent.
+    使用给定Agent执行任务
+    
+    Args:
+        agent: ChatAgent to execute the task
+           执行任务的ChatAgent
+        task_description: Description of the task
+                    任务描述
+        
+    Returns:
+        Task execution result
+        任务执行结果
+    """
+    logger.info(f"Executing task with agent {agent.role_name}")
+    
+    # Create user message
+    # 创建用户消息
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=task_description
+    )
+    
+    # Get response from agent
+    # 从Agent获取响应
+    logger.debug(f"Sending task to agent {agent.role_name}: {task_description}")
+    response = agent.step(user_msg)
+    logger.debug(f"Received response from agent {agent.role_name}")
+    
+    if response.msgs:
+        result_content = response.msgs[0].content
+        logger.info(f"Task executed successfully by agent {agent.role_name} with result: {result_content}")
+        return result_content
+    else:
+        logger.warning(f"Failed to execute task with agent {agent.role_name}")
+        return f"抱歉，{agent.role_name}无法生成响应，请稍后重试。"
 
 def main():
     """Main function to run the CAMEL-AI travel planner.
