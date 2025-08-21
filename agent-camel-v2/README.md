@@ -50,6 +50,12 @@ OPENAI_BASE_URL=                    # 可选，OpenAI API的基础URL（用于�
 OLLAMA_BASE_URL=http://localhost:11434  # Ollama服务地址
 OLLAMA_MODEL_NAME=llama2            # Ollama模型名称
 
+# Comet ML Monitoring Configuration
+COMET_API_KEY=your_comet_api_key    # 你的Comet ML API密钥
+COMET_PROJECT_NAME=your_project_name  # Comet ML项目名称
+COMET_WORKSPACE=your_workspace_name  # Comet ML工作区名称
+COMET_LOG_MODEL_CALLS=true          # 是否记录模型调用 (true/false)
+
 # 其他配置...
 ```
 
@@ -92,6 +98,7 @@ python main.py "我想在10月去日本旅行，预算5000美元"
 - `base.py`: 定义了智能体的基础接口和通用功能，所有智能体类型的抽象基类
 - `coordinator.py`: 实现了智能体间的任务分配、协调和通信机制，是多智能体系统的"大脑"
 - `model_provider.py`: 提供统一的模型访问接口，支持动态切换不同模型服务（OpenAI、Ollama等）
+- `comet_monitor.py`: 实现了与Comet ML的集成，用于监控和记录模型调用信息
 - `roles/`: 包含各种角色定义，每个角色有特定的能力和行为模式
 
 ### 工具模块 (tools/)

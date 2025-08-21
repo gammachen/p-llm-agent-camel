@@ -153,15 +153,25 @@ class ExpenseReimbursementSystem:
             """
             print(f"get_policy_info: {policy_type}")
             
+            # 政策类型中英文映射，解决数据与逻辑不匹配问题
+            policy_type_mapping = {
+                "max_daily_meal": "每日餐饮最高限额",
+                "max_hotel_per_night": "每晚住宿最高限额",
+                "allowed_categories": "允许报销的类别"
+            }
+            
             if policy_type in self.reimbursement_policy:
                 value = self.reimbursement_policy[policy_type]
                 # 如果是列表，转换为字符串
                 if isinstance(value, list):
                     value = ", ".join(value)
-                result = f"{policy_type}政策: {value}"
+                # 使用映射后的中文名称显示政策
+                display_name = policy_type_mapping.get(policy_type, policy_type)
+                result = f"{display_name}: {value}"
             else:
                 result = f"未找到政策类型: {policy_type}"
             
+            print("政策查询结果:", result)
             return result
         
         # 为函数添加必要的元数据，使CAMEL框架能够正确识别

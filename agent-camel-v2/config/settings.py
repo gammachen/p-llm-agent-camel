@@ -36,5 +36,11 @@ class Settings:
     MAX_TOKENS: int = int(os.getenv("MAX_TOKENS", "2000"))
     TEMPERATURE: float = float(os.getenv("TEMPERATURE", "0.7"))
 
+    # Monitoring settings
+    # 监控设置
+    COMET_API_KEY: Optional[str] = os.getenv("COMET_API_KEY")
+    COMET_PROJECT_NAME: str = os.getenv("COMET_PROJECT_NAME", "camel-agent-monitoring")
+    COMET_WORKSPACE: Optional[str] = os.getenv("COMET_WORKSPACE")
+    COMET_LOG_MODEL_CALLS: bool = os.getenv("COMET_LOG_MODEL_CALLS", "True").lower() == "true"
 
 settings = Settings()

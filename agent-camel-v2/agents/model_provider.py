@@ -10,6 +10,9 @@ import json
 from typing import Dict, Any, Optional
 from config.settings import settings
 
+# 导入comet监控器
+from agents.comet_monitor import comet_monitor
+
 
 class ModelProvider:
     """Base class for model providers.
@@ -32,8 +35,10 @@ class OpenAIProvider(ModelProvider):
         )
     
     def generate(self, prompt: str, **kwargs) -> str:
-        """Generate text using OpenAI API.
-        使用OpenAI API生成文本"""
+        """
+        Generate text using OpenAI API.
+        使用OpenAI API生成文本
+        """
         try:
             response = self.client.chat.completions.create(
                 model=kwargs.get('model', settings.DEFAULT_MODEL_NAME),
@@ -41,9 +46,34 @@ class OpenAIProvider(ModelProvider):
                 max_tokens=kwargs.get('max_tokens', settings.MAX_TOKENS),
                 temperature=kwargs.get('temperature', settings.TEMPERATURE)
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            
+            # 记录模型调用到Comet ML
+            comet_monitor.log_model_call(
+                provider_name="openai",
+                prompt=prompt,
+                response=content,
+                model=kwargs.get('model', settings.DEFAULT_MODEL_NAME),
+                temperature=kwargs.get('temperature', settings.TEMPERATURE),
+                max_tokens=kwargs.get('max_tokens', settings.MAX_TOKENS)
+            )
+            
+            return content
         except Exception as e:
-            return f"Error generating response with OpenAI: {str(e)}"
+            error_msg = f"Error generating response with OpenAI: {str(e)}"
+            
+            # 记录错误到Comet ML
+            comet_monitor.log_model_call(
+                provider_name="openai",
+                prompt=prompt,
+                response=error_msg,
+                model=kwargs.get('model', settings.DEFAULT_MODEL_NAME),
+                temperature=kwargs.get('temperature', settings.TEMPERATURE),
+                max_tokens=kwargs.get('max_tokens', settings.MAX_TOKENS),
+                error=str(e)
+            )
+            
+            return error_msg
 
 
 class OllamaProvider(ModelProvider):
@@ -51,8 +81,10 @@ class OllamaProvider(ModelProvider):
     用于本地模型的Ollama模型提供商"""
     
     def generate(self, prompt: str, **kwargs) -> str:
-        """Generate text using Ollama API.
-        使用Ollama API生成文本"""
+        """
+        Generate text using Ollama API.
+        使用Ollama API生成文本
+        """
         try:
             url = f"{settings.OLLAMA_BASE_URL}/api/generate"
             payload = {
@@ -68,9 +100,32 @@ class OllamaProvider(ModelProvider):
             response.raise_for_status()
             
             result = response.json()
-            return result.get('response', '')
+            content = result.get('response', '')
+            
+            # 记录模型调用到Comet ML
+            comet_monitor.log_model_call(
+                provider_name="ollama",
+                prompt=prompt,
+                response=content,
+                model=kwargs.get('model', settings.OLLAMA_MODEL_NAME),
+                temperature=kwargs.get('temperature', settings.TEMPERATURE)
+            )
+            
+            return content
         except Exception as e:
-            return f"Error generating response with Ollama: {str(e)}"
+            error_msg = f"Error generating response with Ollama: {str(e)}"
+            
+            # 记录错误到Comet ML
+            comet_monitor.log_model_call(
+                provider_name="ollama",
+                prompt=prompt,
+                response=error_msg,
+                model=kwargs.get('model', settings.OLLAMA_MODEL_NAME),
+                temperature=kwargs.get('temperature', settings.TEMPERATURE),
+                error=str(e)
+            )
+            
+            return error_msg
 
 
 class ModelProviderFactory:
@@ -114,8 +169,34 @@ class AnthropicProvider(ModelProvider):
     def generate(self, prompt: str, **kwargs) -> str:
         """Generate text using Anthropic API.
         使用Anthropic API生成文本"""
-        # Placeholder implementation
-        # 占位符实现
-        # In a real implementation, we would integrate with Anthropic's API
-        # 在实际实现中，我们将与Anthropic的API集成
-        return f"Anthropic provider placeholder response for: {prompt}"
+        try:
+            # Placeholder implementation
+            # 占位符实现
+            # In a real implementation, we would integrate with Anthropic's API
+            # 在实际实现中，我们将与Anthropic的API集成
+            content = f"Anthropic provider placeholder response for: {prompt}"
+            
+            # 记录模型调用到Comet ML
+            comet_monitor.log_model_call(
+                provider_name="anthropic",
+                prompt=prompt,
+                response=content,
+                model=kwargs.get('model', settings.ANTHROPIC_MODEL_NAME),
+                temperature=kwargs.get('temperature', settings.TEMPERATURE)
+            )
+            
+            return content
+        except Exception as e:
+            error_msg = f"Error generating response with Anthropic: {str(e)}"
+            
+            # 记录错误到Comet ML
+            comet_monitor.log_model_call(
+                provider_name="anthropic",
+                prompt=prompt,
+                response=error_msg,
+                model=kwargs.get('model', settings.ANTHROPIC_MODEL_NAME),
+                temperature=kwargs.get('temperature', settings.TEMPERATURE),
+                error=str(e)
+            )
+            
+            return error_msg

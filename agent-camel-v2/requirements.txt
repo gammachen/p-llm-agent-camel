@@ -24,3 +24,6 @@ requests>=2.30.0
 pytest>=7.0.0
 black>=23.0.0
 flake8>=6.0.0
+
+# Monitoring
+git+https://github.com/comet-ml/comet-ml.git@master
