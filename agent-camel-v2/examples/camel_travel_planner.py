@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, RoleType
+from camel.types import ModelPlatformType, ModelType, RoleType, OpenAIBackendRole
 from camel.configs import ChatGPTConfig
 from camel.agents import TaskSpecifyAgent, TaskPlannerAgent
 from camel.societies import RolePlaying
@@ -190,7 +190,20 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
         
         # Get assistant response
         # 获取助手响应
-        assistant_response, user_msg = role_play_session.step(input_msg)
+        # Extract messages from ChatAgentResponse objects
+        raw_response = role_play_session.step(input_msg)
+        assistant_response = raw_response[0]
+        user_msg = raw_response[1]
+
+        # Extract the actual message content
+        assistant_msg = assistant_response.msgs[0] if hasattr(assistant_response, 'msgs') and assistant_response.msgs else None
+        user_message = user_msg.msgs[0] if hasattr(user_msg, 'msgs') and user_msg.msgs else None
+
+        # Update memory with extracted messages
+        if hasattr(role_play_session.assistant_agent, 'update_memory') and assistant_msg:
+            role_play_session.assistant_agent.update_memory(assistant_msg, OpenAIBackendRole.ASSISTANT)
+        if hasattr(role_play_session.user_agent, 'update_memory') and user_message:
+            role_play_session.user_agent.update_memory(user_message, OpenAIBackendRole.USER)
         
         if assistant_response.terminated:
             logger.info("Conversation terminated by assistant")
@@ -198,17 +211,17 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
             
         conversation_history.append({
             "turn": turn + 1,
-            "assistant": assistant_response.msg.content if assistant_response.msg else "",
-            "user": user_msg.msgs[0].content if user_msg and user_msg.msgs else ""
+            "assistant": assistant_msg.content if assistant_msg else "",
+            "user": user_message.content if user_message else ""
         })
         
-        # Use the user message as input for next turn
-        # 使用用户消息作为下一轮的输入
-        input_msg = user_msg
+        # Use the extracted user message as input for next turn
+        # 使用提取的用户消息作为下一轮的输入
+        input_msg = user_message
         
         # Break if user message indicates completion
         # 如果用户消息表示完成则中断
-        if user_msg and ("完成" in user_msg.content or "满意" in user_msg.content or "谢谢" in user_msg.content):
+        if user_message and ("完成" in user_message.content or "满意" in user_message.content or "谢谢" in user_message.content):
             logger.info("Conversation completed by user satisfaction")
             break
     
