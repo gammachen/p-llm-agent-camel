@@ -362,7 +362,8 @@ class ExpenseReimbursementSystem:
         # 引导manager使用工具获取政策信息，而不是直接提供
         review_request = BaseMessage.make_user_message(
             role_name="System",
-            content=f"请审批以下报销申请。为做出合理决定，请使用get_policy_info工具获取相关政策信息（如max_daily_meal、allowed_categories等）。\n\n申请信息：\n金额：{self.expense_application['amount']}元\n事由：{self.expense_application['purpose']}\n类别：{self.expense_application['category']}\n日期：{self.expense_application['date']}\n部门：{self.expense_application['department']}"
+            content = f"请审批以下报销申请。为做出合理决定，请使用get_policy_info工具获取相关政策信息（如max_daily_meal、allowed_categories等）。\n\n申请信息：\n金额：{self.expense_application['amount']}元\n事由：{self.expense_application['purpose']}\n类别：{self.expense_application['category']}\n日期：{self.expense_application['date']}\n部门：{self.expense_application['department']}"
+                f"\n\n如果审批通过请明确输出：<审批通过>，如果审批不通过请明确输出：<审批不通过>"
         )
         
         # 获取经理审批意见
@@ -377,7 +378,7 @@ class ExpenseReimbursementSystem:
         
         # 简单的审批逻辑（根据金额和事由决定是否通过）
         # 这里我们模拟经理审批通过的情况，但在实际应用中可以根据业务规则进行更复杂的判断
-        is_approved = "同意" in review_result or "通过" in review_result # or self.expense_application['amount'] < 5000
+        is_approved = "同意" in review_result or "通过" in review_result or "批准" in review_result # or self.expense_application['amount'] < 5000
         
         # 更新报销状态
         self.expense_application['status'] = "manager_approved" if is_approved else "manager_rejected"
@@ -475,7 +476,14 @@ class ExpenseReimbursementSystem:
         financial_auditor = self.agents["financial_auditor"]
         
         # 准备审核请求
-        policy_info = f"公司报销政策：\n- 每日餐饮最高标准：{self.reimbursement_policy['max_daily_meal']}元\n- 每晚住宿最高标准：{self.reimbursement_policy['max_hotel_per_night']}元\n- 允许的费用类别：{', '.join(self.reimbursement_policy['allowed_categories'])}"
+        # 从重构后的报销政策字典中获取餐饮和住宿的最高标准
+        meal_max = self.reimbursement_policy.get('meal', {}).get('max_daily_amount', '未设置')
+        hotel_max = self.reimbursement_policy.get('hotel', {}).get('max_per_night', '未设置')
+        
+        # 使用单独的allowed_categories列表获取允许的报销类别
+        allowed_categories_str = ', '.join(self.allowed_categories)
+        
+        policy_info = f"公司报销政策：\n- 每日餐饮最高标准：{meal_max}元\n- 每晚住宿最高标准：{hotel_max}元\n- 允许的费用类别：{allowed_categories_str}"
         
         audit_request = BaseMessage.make_user_message(
             role_name="System",
@@ -493,7 +501,7 @@ class ExpenseReimbursementSystem:
         
         # 简单的审核逻辑（检查类别是否允许）
         is_approved = "同意" in audit_result or "通过" in audit_result or \
-                      self.expense_application['category'] in self.reimbursement_policy['allowed_categories']
+                      self.expense_application['category'] in self.allowed_categories
         
         # 更新报销状态
         self.expense_application['status'] = "financial_approved" if is_approved else "financial_rejected"

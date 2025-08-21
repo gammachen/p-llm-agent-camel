@@ -49,13 +49,13 @@ class MemoryManager:
             message: Message to add to context
                  要添加到上下文的消息
         """
-        logger.debug(f"Updating context for session {session_id} in agent {self.agent_id}")
+        print(f"Updating context for session {session_id} in agent {self.agent_id}")
         if session_id not in self.contexts:
             self.contexts[session_id] = []
-            logger.debug(f"Created new context for session {session_id}")
+            print(f"Created new context for session {session_id}")
         
         self.contexts[session_id].append(message)
-        logger.debug(f"Added message to context for session {session_id}. Context now has {len(self.contexts[session_id])} messages")
+        print(f"Added message to context for session {session_id}. Context now has {len(self.contexts[session_id])} messages")
         
         # Limit context size and compress if necessary
         # 限制上下文大小并在必要时压缩
@@ -80,9 +80,9 @@ class MemoryManager:
             Context messages
             上下文消息
         """
-        logger.debug(f"Getting context for session {session_id} in agent {self.agent_id}")
+        print(f"Getting context for session {session_id} in agent {self.agent_id}")
         context = self.contexts.get(session_id, [])
-        logger.debug(f"Retrieved context with {len(context)} messages for session {session_id}")
+        print(f"Retrieved context with {len(context)} messages for session {session_id}")
         return context
     
     def store_interaction(self, session_id: str, input_message: Dict[str, Any], 
@@ -101,10 +101,10 @@ class MemoryManager:
             plan: Action plan
               动作计划
         """
-        logger.debug(f"Storing interaction for session {session_id} in agent {self.agent_id}")
+        print(f"Storing interaction for session {session_id} in agent {self.agent_id}")
         if session_id not in self.interactions:
             self.interactions[session_id] = []
-            logger.debug(f"Created new interaction history for session {session_id}")
+            print(f"Created new interaction history for session {session_id}")
         
         interaction = {
             'input': input_message,
@@ -113,7 +113,7 @@ class MemoryManager:
         }
         
         self.interactions[session_id].append(interaction)
-        logger.debug(f"Stored interaction for session {session_id}. History now has {len(self.interactions[session_id])} interactions")
+        print(f"Stored interaction for session {session_id}. History now has {len(self.interactions[session_id])} interactions")
     
     def get_interaction_history(self, session_id: str) -> List[Dict[str, Any]]:
         """
@@ -128,9 +128,9 @@ class MemoryManager:
             Interaction history
             交互历史
         """
-        logger.debug(f"Getting interaction history for session {session_id} in agent {self.agent_id}")
+        print(f"Getting interaction history for session {session_id} in agent {self.agent_id}")
         history = self.interactions.get(session_id, [])
-        logger.debug(f"Retrieved interaction history with {len(history)} entries for session {session_id}")
+        print(f"Retrieved interaction history with {len(history)} entries for session {session_id}")
         return history
     
     def compress_context(self, session_id: str) -> None:
@@ -155,7 +155,7 @@ class MemoryManager:
         Clean up old sessions to free up memory.
         清理旧会话以释放内存
         """
-        logger.debug(f"Cleaning up old sessions in agent {self.agent_id}")
+        print(f"Cleaning up old sessions in agent {self.agent_id}")
         # Remove sessions older than 24 hours
         # 删除超过24小时的会话
         # Placeholder implementation

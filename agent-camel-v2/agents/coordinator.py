@@ -29,24 +29,24 @@ class TravelPlannerAgent(BaseAgent):
         logger.info(f"TravelPlannerAgent {self.agent_id} processing message in session {session_id}")
         # 1. Update context
         # 1. 更新上下文
-        logger.debug(f"Updating context for session {session_id}")
+        print(f"Updating context for session {session_id}")
         self.memory.update_context(session_id, message)
         
         # 2. Plan next action
         # 2. 规划下一个动作
-        logger.debug(f"Planning next action for session {session_id}")
+        print(f"Planning next action for session {session_id}")
         plan = self.plan_next_action(message, session_id)
         logger.info(f"Planned action for session {session_id}: {plan.get('action', 'unknown')}")
         
         # 3. Execute plan
         # 3. 执行计划
-        logger.debug(f"Executing plan for session {session_id}")
+        print(f"Executing plan for session {session_id}")
         response = self.execute_plan(plan, session_id)
         logger.info(f"Executed plan for session {session_id}")
         
         # 4. Store interaction
         # 4. 存储交互记录
-        logger.debug(f"Storing interaction for session {session_id}")
+        print(f"Storing interaction for session {session_id}")
         self.memory.store_interaction(session_id, message, response, plan)
         logger.info(f"Stored interaction for session {session_id}")
         
@@ -55,15 +55,15 @@ class TravelPlannerAgent(BaseAgent):
     def plan_next_action(self, message: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Plan the next action.
         规划下一个动作"""
-        logger.debug(f"TravelPlannerAgent {self.agent_id} planning next action for session {session_id}")
+        print(f"TravelPlannerAgent {self.agent_id} planning next action for session {session_id}")
         context = self.memory.get_context(session_id)
         tools = self.tools.get_available_tools()
-        logger.debug(f"TravelPlannerAgent Retrieved context with {len(context)} messages and {len(tools)} tools for session {session_id}")
+        print(f"TravelPlannerAgent Retrieved context with {len(context)} messages and {len(tools)} tools for session {session_id}")
         
         prompt = self._create_planning_prompt(message, context, tools)
-        logger.debug(f"TravelPlannerAgent Generated planning prompt for session {session_id}")
+        print(f"TravelPlannerAgent Generated planning prompt for session {session_id}")
         plan_text = self.model.generate(prompt, max_tokens=300)
-        logger.debug(f"TravelPlannerAgent Generated plan text for session {session_id}")
+        print(f"TravelPlannerAgent Generated plan text for session {session_id}")
         
         # Try to parse the plan to determine if tools should be used
         # 尝试解析计划以确定是否应使用工具
@@ -94,12 +94,12 @@ class TravelPlannerAgent(BaseAgent):
         执行计划"""
         logger.info(f"TravelPlannerAgent {self.agent_id} executing plan for session {session_id}")
         if plan['action'] == 'respond':
-            logger.debug(f"TravelPlannerAgent Responding with content for session {session_id}")
+            print(f"TravelPlannerAgent Responding with content for session {session_id}")
             response = self._generate_response(plan['content'])
             logger.info(f"Generated response for session {session_id}")
             return response
         elif plan['action'] == 'use_tool':
-            logger.debug(f"TravelPlannerAgent Using tool {plan['tool_name']} for session {session_id}")
+            print(f"TravelPlannerAgent Using tool {plan['tool_name']} for session {session_id}")
             tool_result = self._use_tool(plan['tool_name'], plan.get('parameters', {}))
             # Generate a response based on tool result
             # 根据工具结果生成响应
@@ -129,24 +129,24 @@ class LocalGuideAgent(BaseAgent):
         logger.info(f"LocalGuideAgent {self.agent_id} processing message in session {session_id}")
         # 1. Update context
         # 1. 更新上下文
-        logger.debug(f"LocalGuideAgent Updating context for session {session_id}")
+        print(f"LocalGuideAgent Updating context for session {session_id}")
         self.memory.update_context(session_id, message)
         
         # 2. Plan next action
         # 2. 规划下一个动作
-        logger.debug(f"LocalGuideAgent Planning next action for session {session_id}")
+        print(f"LocalGuideAgent Planning next action for session {session_id}")
         plan = self.plan_next_action(message, session_id)
         logger.info(f"LocalGuideAgent Planned action for session {session_id}: {plan.get('action', 'unknown')}")
         
         # 3. Execute plan
         # 3. 执行计划
-        logger.debug(f"LocalGuideAgent Executing plan for session {session_id}")
+        print(f"LocalGuideAgent Executing plan for session {session_id}")
         response = self.execute_plan(plan, session_id)
         logger.info(f"LocalGuideAgent Executed plan for session {session_id}")
         
         # 4. Store interaction
         # 4. 存储交互记录
-        logger.debug(f"LocalGuideAgent Storing interaction for session {session_id}")
+        print(f"LocalGuideAgent Storing interaction for session {session_id}")
         self.memory.store_interaction(session_id, message, response, plan)
         logger.info(f"LocalGuideAgent Stored interaction for session {session_id}")
         
@@ -155,15 +155,15 @@ class LocalGuideAgent(BaseAgent):
     def plan_next_action(self, message: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Plan the next action.
         规划下一个动作"""
-        logger.debug(f"LocalGuideAgent {self.agent_id} planning next action for session {session_id}")
+        print(f"LocalGuideAgent {self.agent_id} planning next action for session {session_id}")
         context = self.memory.get_context(session_id)
         tools = self.tools.get_available_tools()
-        logger.debug(f"LocalGuideAgent Retrieved context with {len(context)} messages and {len(tools)} tools for session {session_id}")
+        print(f"LocalGuideAgent Retrieved context with {len(context)} messages and {len(tools)} tools for session {session_id}")
         
         prompt = self._create_planning_prompt(message, context, tools)
-        logger.debug(f"LocalGuideAgent Generated planning prompt for session {session_id}")
+        print(f"LocalGuideAgent Generated planning prompt for session {session_id}")
         plan_text = self.model.generate(prompt, max_tokens=300)
-        logger.debug(f"LocalGuideAgent Generated plan text for session {session_id}")
+        print(f"LocalGuideAgent Generated plan text for session {session_id}")
         
         # Try to parse the plan to determine if tools should be used
         # 尝试解析计划以确定是否应使用工具
@@ -186,12 +186,12 @@ class LocalGuideAgent(BaseAgent):
         执行计划"""
         logger.info(f"LocalGuideAgent {self.agent_id} executing plan for session {session_id}")
         if plan['action'] == 'respond':
-            logger.debug(f"Responding with content for session {session_id}")
+            print(f"Responding with content for session {session_id}")
             response = self._generate_response(plan['content'])
             logger.info(f"Generated response for session {session_id}")
             return response
         elif plan['action'] == 'use_tool':
-            logger.debug(f"Using tool {plan['tool_name']} for session {session_id}")
+            print(f"Using tool {plan['tool_name']} for session {session_id}")
             tool_result = self._use_tool(plan['tool_name'], plan.get('parameters', {}))
             # Generate a response based on tool result
             # 根据工具结果生成响应
@@ -221,24 +221,24 @@ class BudgetAdvisorAgent(BaseAgent):
         logger.info(f"BudgetAdvisorAgent {self.agent_id} processing message in session {session_id}")
         # 1. Update context
         # 1. 更新上下文
-        logger.debug(f"BudgetAdvisorAgent Updating context for session {session_id}")
+        print(f"BudgetAdvisorAgent Updating context for session {session_id}")
         self.memory.update_context(session_id, message)
         
         # 2. Plan next action
         # 2. 规划下一个动作
-        logger.debug(f"BudgetAdvisorAgent 规划 next action for session {session_id}")
+        print(f"BudgetAdvisorAgent 规划 next action for session {session_id}")
         plan = self.plan_next_action(message, session_id)
         logger.info(f"BudgetAdvisorAgent Planned action for session {session_id}: {plan.get('action', 'unknown')}")
         
         # 3. Execute plan
         # 3. 执行计划
-        logger.debug(f"BudgetAdvisorAgent Executing plan for session {session_id}")
+        print(f"BudgetAdvisorAgent Executing plan for session {session_id}")
         response = self.execute_plan(plan, session_id)
         logger.info(f"BudgetAdvisorAgent Executed plan for session {session_id}")
         
         # 4. Store interaction
         # 4. 存储交互记录
-        logger.debug(f"BudgetAdvisorAgent Storing interaction for session {session_id}")
+        print(f"BudgetAdvisorAgent Storing interaction for session {session_id}")
         self.memory.store_interaction(session_id, message, response, plan)
         logger.info(f"BudgetAdvisorAgent Stored interaction for session {session_id}")
         
@@ -247,15 +247,15 @@ class BudgetAdvisorAgent(BaseAgent):
     def plan_next_action(self, message: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Plan the next action.
         规划下一个动作"""
-        logger.debug(f"BudgetAdvisorAgent {self.agent_id} planning next action for session {session_id}")
+        print(f"BudgetAdvisorAgent {self.agent_id} planning next action for session {session_id}")
         context = self.memory.get_context(session_id)
         tools = self.tools.get_available_tools()
-        logger.debug(f"BudgetAdvisorAgent Retrieved context with {len(context)} messages and {len(tools)} tools for session {session_id}")
+        print(f"BudgetAdvisorAgent Retrieved context with {len(context)} messages and {len(tools)} tools for session {session_id}")
         
         prompt = self._create_planning_prompt(message, context, tools)
-        logger.debug(f"BudgetAdvisorAgent Generated planning prompt for session {session_id}")
+        print(f"BudgetAdvisorAgent Generated planning prompt for session {session_id}")
         plan_text = self.model.generate(prompt, max_tokens=300)
-        logger.debug(f"BudgetAdvisorAgent Generated plan text for session {session_id}")
+        print(f"BudgetAdvisorAgent Generated plan text for session {session_id}")
         
         # Try to parse the plan to determine if tools should be used
         # 尝试解析计划以确定是否应使用工具
@@ -286,12 +286,12 @@ class BudgetAdvisorAgent(BaseAgent):
         执行计划"""
         logger.info(f"BudgetAdvisorAgent {self.agent_id} executing plan for session {session_id}")
         if plan['action'] == 'respond':
-            logger.debug(f"Responding with content for session {session_id}")
+            print(f"Responding with content for session {session_id}")
             response = self._generate_response(plan['content'])
             logger.info(f"Generated response for session {session_id}")
             return response
         elif plan['action'] == 'use_tool':
-            logger.debug(f"Using tool {plan['tool_name']} for session {session_id}")
+            print(f"Using tool {plan['tool_name']} for session {session_id}")
             tool_result = self._use_tool(plan['tool_name'], plan.get('parameters', {}))
             # Generate a response based on tool result
             # 根据工具结果生成响应
@@ -342,13 +342,13 @@ class TaskCoordinator:
         # 根据类型创建Agent实例
         if agent_type == "travel_planner":
             agent = TravelPlannerAgent(agent_id, model_provider)
-            logger.debug(f"Created TravelPlannerAgent {agent_id}")
+            print(f"Created TravelPlannerAgent {agent_id}")
         elif agent_type == "local_guide":
             agent = LocalGuideAgent(agent_id, model_provider)
-            logger.debug(f"Created LocalGuideAgent {agent_id}")
+            print(f"Created LocalGuideAgent {agent_id}")
         elif agent_type == "budget_advisor":
             agent = BudgetAdvisorAgent(agent_id, model_provider)
-            logger.debug(f"Created BudgetAdvisorAgent {agent_id}")
+            print(f"Created BudgetAdvisorAgent {agent_id}")
         else:
             # Default to travel planner
             # 默认使用旅行规划师
@@ -375,7 +375,7 @@ class TaskCoordinator:
         """
         logger.info(f"Assigning task of type {task.get('type', 'unknown')}")
         suitable_agents = self._find_suitable_agents(requirements)
-        logger.debug(f"Found {len(suitable_agents)} suitable agents")
+        print(f"Found {len(suitable_agents)} suitable agents")
         if not suitable_agents:
             # If no suitable agents found, we might need to create a new one
             # 如果没有找到合适的Agent，我们可能需要创建一个新的
@@ -403,7 +403,7 @@ class TaskCoordinator:
             List of suitable agent IDs
             合适的Agent ID列表
         """
-        logger.debug(f"Finding suitable agents for requirements: {requirements}")
+        print(f"Finding suitable agents for requirements: {requirements}")
         suitable_agents = []
         for agent_id, agent in self.agents.items():
             # For simplicity, we're just checking if the agent exists
@@ -411,7 +411,7 @@ class TaskCoordinator:
             # In a more complex implementation, we would check capabilities
             # 在更复杂的实现中，我们会检查能力
             suitable_agents.append(agent_id)
-        logger.debug(f"Found suitable agents: {suitable_agents}")
+        print(f"Found suitable agents: {suitable_agents}")
         return suitable_agents
     
     def _matches_requirements(self, capabilities: List[str], requirements: Dict[str, Any]) -> bool:
@@ -429,16 +429,16 @@ class TaskCoordinator:
             True if capabilities match requirements, False otherwise
             如果能力符合需求则返回True，否则返回False
         """
-        logger.debug(f"Checking if capabilities {capabilities} match requirements {requirements}")
+        print(f"Checking if capabilities {capabilities} match requirements {requirements}")
         # Simple implementation - check if any required capability is in agent capabilities
         # 简单实现 - 检查是否有任何所需能力在Agent能力中
         required_capabilities = requirements.get('capabilities', [])
         if not required_capabilities:
-            logger.debug("No specific capabilities required")
+            print("No specific capabilities required")
             return True
             
         match = any(cap in capabilities for cap in required_capabilities)
-        logger.debug(f"Capabilities match: {match}")
+        print(f"Capabilities match: {match}")
         return match
     
     def _select_best_agent(self, suitable_agents: List[str], task: Dict[str, Any]) -> str:
@@ -456,13 +456,13 @@ class TaskCoordinator:
             Selected agent ID
             选定的Agent ID
         """
-        logger.debug(f"Selecting best agent from {suitable_agents} for task")
+        print(f"Selecting best agent from {suitable_agents} for task")
         # Simple implementation - select the first suitable agent
         # 简单实现 - 选择第一个合适的Agent
         # In a more complex system, this could consider agent workload, expertise, etc.
         # 在更复杂的系统中，这可以考虑Agent的工作负载、专业等
         selected = suitable_agents[0] if suitable_agents else None
-        logger.debug(f"Selected agent: {selected}")
+        print(f"Selected agent: {selected}")
         return selected
     
     def _dispatch_task(self, agent_id: str, task: Dict[str, Any]) -> str:
@@ -490,7 +490,7 @@ class TaskCoordinator:
             'status': 'assigned'
         }
         self.task_queue.append(task_entry)
-        logger.debug(f"Task added to queue with ID {task_entry['id']}")
+        print(f"Task added to queue with ID {task_entry['id']}")
         
         return agent_id
     
@@ -519,7 +519,7 @@ class TaskCoordinator:
             }
         
         agent = self.agents[agent_id]
-        logger.debug(f"Found agent {agent_id} for task execution")
+        print(f"Found agent {agent_id} for task execution")
         
         # Create a message from the task
         # 从任务创建消息
@@ -527,11 +527,11 @@ class TaskCoordinator:
             "role": "user",
             "content": task.get("description", "Please help with this task")
         }
-        logger.debug(f"Created message from task: {message['content']}")
+        print(f"Created message from task: {message['content']}")
         
         # Process the message with the agent
         # 使用Agent处理消息
-        logger.debug(f"Processing message with agent {agent_id}")
+        print(f"Processing message with agent {agent_id}")
         result = agent.process_message(message, session_id)
         logger.info(f"Task execution completed with agent {agent_id} in session {session_id}")
         
@@ -585,5 +585,5 @@ class TaskCoordinator:
                 }
             ]
         }
-        logger.debug(f"Analysis result: {result}")
+        print(f"Analysis result: {result}")
         return result

@@ -19,7 +19,7 @@ class Tool(ABC):
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
-        logger.debug(f"Initialized tool: {name}")
+        print(f"Initialized tool: {name}")
     
     @abstractmethod
     def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -52,7 +52,7 @@ class SearchTool(Tool):
             "result": f"Search results for '{query}' would be displayed here in a real implementation."
                       f"在实际实现中，'{query}'的搜索结果将显示在这里。"
         }
-        logger.debug(f"Search tool execution completed for query: {query}")
+        print(f"Search tool execution completed for query: {query}")
         return result
 
 
@@ -80,7 +80,7 @@ class CalculatorTool(Tool):
             "result": f"Result of '{expression}' would be calculated here in a real implementation."
                       f"在实际实现中，'{expression}'的结果将在这里计算。"
         }
-        logger.debug(f"Calculator tool execution completed for expression: {expression}")
+        print(f"Calculator tool execution completed for expression: {expression}")
         return result
 
 
@@ -101,12 +101,12 @@ class ToolLibrary:
         在库中注册一个工具"""
         logger.info(f"Registering tool: {tool.name}")
         self.tools[tool.name] = tool
-        logger.debug(f"Tool {tool.name} registered successfully")
+        print(f"Tool {tool.name} registered successfully")
     
     def get_available_tools(self) -> List[Dict[str, str]]:
         """Get a list of available tools with their descriptions.
         获取可用工具及其描述的列表"""
-        logger.debug(f"Getting available tools. Count: {len(self.tools)}")
+        print(f"Getting available tools. Count: {len(self.tools)}")
         tools_list = [
             {
                 'name': tool.name,
@@ -114,7 +114,7 @@ class ToolLibrary:
             }
             for tool in self.tools.values()
         ]
-        logger.debug(f"Available tools: {[tool['name'] for tool in tools_list]}")
+        print(f"Available tools: {[tool['name'] for tool in tools_list]}")
         return tools_list
     
     def execute(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -126,5 +126,5 @@ class ToolLibrary:
             raise ValueError(f"Tool '{tool_name}' not found in library")
         
         result = self.tools[tool_name].execute(parameters)
-        logger.debug(f"Tool {tool_name} execution completed")
+        print(f"Tool {tool_name} execution completed")
         return result

@@ -81,7 +81,7 @@ def create_agent(role_type: str, model) -> ChatAgent:
     # 重置Agent
     agent.reset()
     
-    logger.debug(f"Agent {role_info['role_name']} created successfully")
+    print(f"Agent {role_info['role_name']} created successfully")
     return agent
 
 def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
@@ -102,10 +102,10 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     # Setup model
     # 设置模型
     model_platform = os.getenv("DEFAULT_MODEL_PROVIDER", "openai")
-    logger.debug(f"Using model platform: {model_platform}")
+    print(f"Using model platform: {model_platform}")
     
     if model_platform.lower() == "ollama":
-        logger.debug("Initializing Ollama model")
+        print("Initializing Ollama model")
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OLLAMA,
             model_type=os.getenv("OLLAMA_MODEL_NAME", "llama2"),
@@ -114,7 +114,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     else:
         # Default to OpenAI
         # 默认使用OpenAI
-        logger.debug("Initializing OpenAI model")
+        print("Initializing OpenAI model")
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_3_5_TURBO,
@@ -123,14 +123,14 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     
     # 1. Use TaskSpecifyAgent to clarify the task
     # 1. 使用TaskSpecifyAgent明确任务
-    logger.debug("Creating task specify agent")
+    print("Creating task specify agent")
     task_specify_agent = TaskSpecifyAgent(model)
     specified_task = task_specify_agent.run(user_request, meta_dict={"domain": "travel planning"})
     logger.info(f"Specified task: {specified_task}")
     
     # 2. Create RolePlaying society for multi-agent collaboration
     # 2. 创建RolePlaying社会进行多智能体协作
-    logger.debug("Creating RolePlaying society")
+    print("Creating RolePlaying society")
     
     # Define assistant and user roles for the conversation
     # 定义对话中的助手和用户角色
@@ -186,7 +186,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     max_turns = 6  # Limit conversation turns
     
     for turn in range(max_turns):
-        logger.debug(f"Conversation turn {turn + 1}")
+        print(f"Conversation turn {turn + 1}")
         
         # Get assistant response
         # 获取助手响应
@@ -254,7 +254,7 @@ def synthesize_results(results: Dict[str, str], user_request: str) -> str:
         Final synthesized response
         最终综合响应
     """
-    logger.debug("Synthesizing results from multiple agents")
+    print("Synthesizing results from multiple agents")
     
     # Create a summary of all agent responses
     # 创建所有Agent响应的摘要
@@ -269,7 +269,7 @@ def synthesize_results(results: Dict[str, str], user_request: str) -> str:
     response_text += "💰 预算规划：\n"
     response_text += f"{results.get('budget_planning', '正在为您制定预算计划...')}\n\n"
     
-    logger.debug("Results synthesized successfully")
+    print("Results synthesized successfully")
     return response_text
 
 def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
@@ -298,9 +298,9 @@ def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
     
     # Get response from agent
     # 从Agent获取响应
-    logger.debug(f"Sending task to agent {agent.role_name}: {task_description}")
+    print(f"Sending task to agent {agent.role_name}: {task_description}")
     response = agent.step(user_msg)
-    logger.debug(f"Received response from agent {agent.role_name}")
+    print(f"Received response from agent {agent.role_name}")
     
     if response.msgs:
         result_content = response.msgs[0].content
@@ -320,7 +320,7 @@ def main():
     # Get user input
     # 获取用户输入
     user_request = input("请输入您的旅行需求: ")
-    logger.debug(f"User input received: {user_request}")
+    print(f"User input received: {user_request}")
     
     if not user_request.strip():
         logger.warning("No valid travel request provided")
@@ -334,7 +334,7 @@ def main():
     # Process the travel request
     # 处理旅行请求
     result = camel_travel_planning_conversation(user_request)
-    logger.debug("Travel request processing completed")
+    print("Travel request processing completed")
     
     # Display the result
     # 显示结果

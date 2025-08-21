@@ -40,7 +40,7 @@ class Settings:
     # 监控设置
     COMET_API_KEY: Optional[str] = os.getenv("COMET_API_KEY")
     COMET_PROJECT_NAME: str = os.getenv("COMET_PROJECT_NAME", "camel-agent-monitoring")
-    COMET_WORKSPACE: Optional[str] = os.getenv("COMET_WORKSPACE")
+    COMET_WORKSPACE: Optional[str] = os.getenv("COMET_WORKSPACE", "comet-workspace-0811")
     COMET_LOG_MODEL_CALLS: bool = os.getenv("COMET_LOG_MODEL_CALLS", "True").lower() == "true"
 
 settings = Settings()

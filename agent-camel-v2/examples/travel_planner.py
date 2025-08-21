@@ -67,7 +67,7 @@ def travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     # 3. 分析用户请求并分配任务
     task_analysis = coordinator.analyze_request(user_request)
     
-    logger.debug(f"Task analysis: {task_analysis}")
+    print(f"Task analysis: {task_analysis}")
     
     # 4. Execute multi-agent collaboration
     # 4. 执行多Agent协作

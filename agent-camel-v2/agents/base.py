@@ -113,7 +113,7 @@ class BaseAgent(ABC):
             Planning prompt
             规划提示
         """
-        logger.debug(f"Creating planning prompt for agent {self.agent_id}")
+        print(f"Creating planning prompt for agent {self.agent_id}")
         prompt = f"You are {self.role}. "
         prompt += f"Your goal is to help the user with their request.\n\n"
         
@@ -128,7 +128,7 @@ class BaseAgent(ABC):
             prompt += f"- {tool['name']}: {tool['description']}\n"
         
         prompt += "\nPlease provide your plan in a structured format. You can use available tools if needed."
-        logger.debug(f"Planning prompt created for agent {self.agent_id}")
+        print(f"Planning prompt created for agent {self.agent_id}")
         return prompt
     
     def _generate_response(self, content: str) -> Dict[str, Any]:
@@ -144,13 +144,13 @@ class BaseAgent(ABC):
             Standardized response dictionary
             标准化响应字典
         """
-        logger.debug(f"Generating response for agent {self.agent_id}")
+        print(f"Generating response for agent {self.agent_id}")
         response = {
             "role": "assistant",
             "content": content,
             "agent_id": self.agent_id
         }
-        logger.debug(f"Response generated for agent {self.agent_id}")
+        print(f"Response generated for agent {self.agent_id}")
         return response
     
     def _use_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
@@ -171,7 +171,7 @@ class BaseAgent(ABC):
         logger.info(f"Agent {self.agent_id} using tool: {tool_name}")
         try:
             result = self.tools.execute(tool_name, parameters)
-            logger.debug(f"Tool {tool_name} executed successfully by agent {self.agent_id}")
+            print(f"Tool {tool_name} executed successfully by agent {self.agent_id}")
             return result
         except Exception as e:
             logger.error(f"Error executing tool {tool_name} by agent {self.agent_id}: {str(e)}")

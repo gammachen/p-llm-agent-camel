@@ -29,11 +29,11 @@ def main():
         # If command line arguments provided, use them as the user request
         # 如果提供了命令行参数，则将其用作用户请求
         user_request = " ".join(sys.argv[1:])
-        logger.debug(f"Using command line arguments as user request: {user_request}")
+        print(f"Using command line arguments as user request: {user_request}")
     else:
         # Otherwise, prompt the user for input
         # 否则，提示用户输入
-        logger.debug("Prompting user for input")
+        print("Prompting user for input")
         print("请输入您的旅行需求，例如：")
         print("- 我想在10月去日本旅行，预算5000美元")
         print("- 计划一次为期两周的欧洲旅行，重点是历史景点")
@@ -51,7 +51,7 @@ def main():
     
     # Process the travel request using CAMEL-AI
     # 使用CAMEL-AI处理旅行请求
-    logger.debug("Calling camel_travel_planning_conversation function")
+    print("Calling camel_travel_planning_conversation function")
     result = camel_travel_planning_conversation(user_request)
     logger.info("Travel request processing completed")
     
@@ -61,12 +61,12 @@ def main():
     print("旅行计划结果:")
     print("=" * 50)
     print(result["response"])
-    logger.debug("Displayed travel plan result to user")
+    print("Displayed travel plan result to user")
     
     # Display detailed results if available
     # 如果有详细结果则显示
     if "details" in result:
-        logger.debug("Displaying detailed results")
+        print("Displaying detailed results")
         print("\n详细信息:")
         for key, value in result["details"].items():
             print(f"- {key}: {value}")
