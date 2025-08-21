@@ -10,7 +10,8 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.configs import ChatGPTConfig
-from camel.agents import TaskSpecifyAgent, TaskPlannerAgent, AssistantAgent, UserAgent
+from camel.agents import TaskSpecifyAgent, TaskPlannerAgent
+# Remove the incorrect imports and use the correct ones from camel.messages.BaseMessage
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -71,7 +72,7 @@ def create_agent(role_type: str, model) -> ChatAgent:
     # Create the agent
     # 创建Agent
     agent = ChatAgent(
-        assistant_sys_msg,
+        system_message=assistant_sys_msg,
         model=model,
         token_limit=4096
     )
@@ -144,36 +145,8 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     local_guide_agent = create_agent("local_guide", model)
     budget_advisor_agent = create_agent("budget_advisor", model)
     
-    # 4. Create a user agent to simulate the user
-    # 4. 创建用户Agent来模拟用户
-    logger.debug("Creating user agent")
-    user_sys_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=(f"请根据以下任务规划旅行：{specified_task}\n"
-                f"任务分解如下：{planned_tasks}")
-    )
-    user_agent = UserAgent(user_sys_msg)
-    
-    # 5. Set up assistant agents for each role
-    # 5. 为每个角色设置助手Agent
-    logger.debug("Creating assistant agents")
-    assistant_sys_msg_travel = BaseMessage.make_assistant_message(
-        role_name="TravelPlanner",
-        content=travel_roles["travel_planner"]["role_description"]
-    )
-    travel_assistant = AssistantAgent(assistant_sys_msg_travel, model)
-    
-    assistant_sys_msg_local = BaseMessage.make_assistant_message(
-        role_name="LocalGuide", 
-        content=travel_roles["local_guide"]["role_description"]
-    )
-    local_assistant = AssistantAgent(assistant_sys_msg_local, model)
-    
-    assistant_sys_msg_budget = BaseMessage.make_assistant_message(
-        role_name="BudgetAdvisor",
-        content=travel_roles["budget_advisor"]["role_description"]
-    )
-    budget_assistant = AssistantAgent(assistant_sys_msg_budget, model)
+    # No need to create separate user and assistant agents as we're using ChatAgent directly
+    # 不需要单独创建用户和助手Agent，因为我们直接使用ChatAgent
     
     # 6. Initiate a conversation between agents
     # 6. 启动Agent之间的对话
@@ -188,6 +161,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     
     # Collect responses from all agents through conversation
     # 通过对话收集所有Agent的响应
+
     results = {}
     
     # Get travel planner response
