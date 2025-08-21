@@ -106,11 +106,41 @@ class ExpenseReimbursementSystem:
             "HR": 50000
         }
         
-        # 简单的公司报销政策（模拟）
+        # 允许的报销类别
+        self.allowed_categories = ["meal", "travel", "office_supplies", "client_entertainment", "training"]
+        
+        # 公司报销政策（按类别定义）
         self.reimbursement_policy = {
-            "max_daily_meal": 200,
-            "max_hotel_per_night": 1000,
-            "allowed_categories": ["meal", "travel", "office_supplies", "client_entertainment", "training"]
+            "meal": {
+                "name": "餐饮费",
+                "max_daily_amount": 200,
+                "description": "员工因公外出的餐饮费用"
+            },
+            "travel": {
+                "name": "交通费",
+                "max_daily_amount": 500,
+                "description": "员工因公外出的交通费用，包括机票、火车票、出租车费等"
+            },
+            "hotel": {
+                "name": "住宿费",
+                "max_per_night": 1000,
+                "description": "员工因公出差的住宿费用"
+            },
+            "office_supplies": {
+                "name": "办公用品费",
+                "max_single_amount": 1000,
+                "description": "办公所需的文具、设备等用品费用"
+            },
+            "client_entertainment": {
+                "name": "客户招待费",
+                "max_per_event": 2000,
+                "description": "因业务需要招待客户产生的费用"
+            },
+            "training": {
+                "name": "培训费",
+                "max_per_session": 5000,
+                "description": "员工参加培训课程的费用"
+            }
         }
     
     def _setup_model(self):
@@ -146,33 +176,75 @@ class ExpenseReimbursementSystem:
             获取指定类型的报销政策信息
             
             Args:
-                policy_type: 政策类型
+                policy_type: 政策类型，如meal（餐饮）、travel（交通）、hotel（住宿）等
                 
             Returns:
                 政策信息字符串
             """
             print(f"get_policy_info: {policy_type}")
             
-            # 政策类型中英文映射，解决数据与逻辑不匹配问题
-            policy_type_mapping = {
-                "max_daily_meal": "每日餐饮最高限额",
-                "max_hotel_per_night": "每晚住宿最高限额",
-                "allowed_categories": "允许报销的类别"
-            }
+            # 特殊处理：获取允许的报销类别
+            if policy_type == "allowed_categories":
+                categories_str = ", ".join(self.allowed_categories)
+                category_names = []
+                for category in self.allowed_categories:
+                    if category in self.reimbursement_policy:
+                        category_names.append(self.reimbursement_policy[category]["name"])
+                    else:
+                        category_names.append(category)
+                categories_with_names = ", ".join([f"{name}({code})" for code, name in zip(self.allowed_categories, category_names)])
+                return f"允许报销的类别: {categories_with_names}"
             
+            # 处理具体类别政策
             if policy_type in self.reimbursement_policy:
-                value = self.reimbursement_policy[policy_type]
-                # 如果是列表，转换为字符串
-                if isinstance(value, list):
-                    value = ", ".join(value)
-                # 使用映射后的中文名称显示政策
-                display_name = policy_type_mapping.get(policy_type, policy_type)
-                result = f"{display_name}: {value}"
+                policy = self.reimbursement_policy[policy_type]
+                result = [f"{policy['name']}政策"]
+                
+                # 添加政策详情
+                if "max_daily_amount" in policy:
+                    result.append(f"每日最高限额: {policy['max_daily_amount']}元")
+                if "max_per_night" in policy:
+                    result.append(f"每晚最高限额: {policy['max_per_night']}元")
+                if "max_single_amount" in policy:
+                    result.append(f"单次最高限额: {policy['max_single_amount']}元")
+                if "max_per_event" in policy:
+                    result.append(f"每次活动最高限额: {policy['max_per_event']}元")
+                if "max_per_session" in policy:
+                    result.append(f"每场最高限额: {policy['max_per_session']}元")
+                
+                # 添加政策描述
+                if "description" in policy:
+                    result.append(f"描述: {policy['description']}")
+                
+                return "\n".join(result)
             else:
-                result = f"未找到政策类型: {policy_type}"
-            
-            print("政策查询结果:", result)
-            return result
+                # 搜索可能的类别
+                possible_matches = [cat for cat in self.reimbursement_policy.keys() if policy_type.lower() in cat.lower()]
+                if possible_matches:
+                    suggestions = ", ".join(possible_matches)
+                    return f"未找到政策类型: {policy_type}\n\n可能的政策类型有: {suggestions}\n或使用'all'获取所有政策信息"
+                
+                # 特殊处理：获取所有政策信息
+                if policy_type.lower() == "all":
+                    all_policies = []
+                    for category, policy in self.reimbursement_policy.items():
+                        policy_str = [f"【{policy['name']}({category})】"]
+                        if "max_daily_amount" in policy:
+                            policy_str.append(f"每日最高限额: {policy['max_daily_amount']}元")
+                        if "max_per_night" in policy:
+                            policy_str.append(f"每晚最高限额: {policy['max_per_night']}元")
+                        if "max_single_amount" in policy:
+                            policy_str.append(f"单次最高限额: {policy['max_single_amount']}元")
+                        if "max_per_event" in policy:
+                            policy_str.append(f"每次活动最高限额: {policy['max_per_event']}元")
+                        if "max_per_session" in policy:
+                            policy_str.append(f"每场最高限额: {policy['max_per_session']}元")
+                        if "description" in policy:
+                            policy_str.append(f"描述: {policy['description']}")
+                        all_policies.append("\n".join(policy_str))
+                    return "\n\n".join(all_policies)
+                
+                return f"未找到政策类型: {policy_type}\n\n使用'all'获取所有政策信息或'allowed_categories'获取允许报销的类别"
         
         # 为函数添加必要的元数据，使CAMEL框架能够正确识别
         get_policy_info.name = "get_policy_info"
@@ -182,7 +254,7 @@ class ExpenseReimbursementSystem:
             "properties": {
                 "policy_type": {
                     "type": "string",
-                    "description": "政策类型，如交通、餐饮、住宿等"
+                    "description": "政策类型，可用值包括：meal（餐饮）、travel（交通）、hotel（住宿）、office_supplies（办公用品）、client_entertainment（客户招待）、training（培训）、allowed_categories（允许报销的类别）、all（所有政策）"
                 }
             },
             "required": ["policy_type"]
