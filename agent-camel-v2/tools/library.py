@@ -43,7 +43,7 @@ class SearchTool(Tool):
         """Execute the search tool.
         执行搜索工具"""
         query = parameters.get("query", "")
-        logger.info(f"Executing search tool with query: {query}")
+        print(f"Executing search tool with query: {query}")
         # This is a placeholder implementation
         # 这是一个占位符实现
         # In a real implementation, we would integrate with a search API
@@ -71,7 +71,7 @@ class CalculatorTool(Tool):
         """Execute the calculator tool.
         执行计算器工具"""
         expression = parameters.get("expression", "")
-        logger.info(f"Executing calculator tool with expression: {expression}")
+        print(f"Executing calculator tool with expression: {expression}")
         # This is a placeholder implementation
         # 这是一个占位符实现
         # In a real implementation, we would evaluate the expression
@@ -90,7 +90,7 @@ class ToolLibrary:
     
     def __init__(self):
         self.tools: Dict[str, Tool] = {}
-        logger.info("Initializing ToolLibrary")
+        print("Initializing ToolLibrary")
         # Register some basic tools
         # 注册一些基本工具
         self.register_tool(SearchTool())
@@ -99,7 +99,7 @@ class ToolLibrary:
     def register_tool(self, tool: Tool) -> None:
         """Register a tool in the library.
         在库中注册一个工具"""
-        logger.info(f"Registering tool: {tool.name}")
+        print(f"Registering tool: {tool.name}")
         self.tools[tool.name] = tool
         print(f"Tool {tool.name} registered successfully")
     
@@ -120,7 +120,7 @@ class ToolLibrary:
     def execute(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool by name with given parameters.
         根据名称和给定参数执行工具"""
-        logger.info(f"Executing tool: {tool_name}")
+        print(f"Executing tool: {tool_name}")
         if tool_name not in self.tools:
             logger.error(f"Tool '{tool_name}' not found in library")
             raise ValueError(f"Tool '{tool_name}' not found in library")

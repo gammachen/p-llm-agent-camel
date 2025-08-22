@@ -21,6 +21,9 @@ from camel.agents import TaskSpecifyAgent
 from camel.societies import RolePlaying
 from dotenv import load_dotenv
 
+# 导入comet监控器
+from agents.comet_monitor import comet_monitor
+
 # Load environment variables
 # 加载环境变量
 load_dotenv()
@@ -84,7 +87,13 @@ class ExpenseReimbursementSystem:
         Args:
             model: 模型实例，如果为None则自动创建
         """
+        # 先初始化监控器
+        self.monitor = comet_monitor
+        
+        # 再初始化模型
         self.model = self._setup_model() if model is None else model
+        
+        # 其他初始化
         self.roles = reimbursement_roles
         self.agents = {}
         self.current_status = "initialized"
@@ -97,6 +106,7 @@ class ExpenseReimbursementSystem:
             "receipts": [],
             "status": "draft"
         }
+        print(f"Comet monitoring status: {'active' if self.monitor.is_active else 'inactive'}")
         
         # 简单的部门预算数据（模拟）
         self.department_budgets = {
@@ -147,6 +157,10 @@ class ExpenseReimbursementSystem:
         """
         设置模型实例
         """
+        print(os.getenv("DEFAULT_MODEL_PROVIDER"))
+        print(os.getenv("OPENAI_API_KEY"))
+        print(os.getenv("OPENAI_BASE_URL"))
+        
         model_platform = os.getenv("DEFAULT_MODEL_PROVIDER", "openai")
         print(f"Using model platform: {model_platform}")
         
@@ -164,7 +178,53 @@ class ExpenseReimbursementSystem:
                 model_config_dict=ChatGPTConfig(temperature=0.7, max_tokens=2000).as_dict()
             )
         
+        # 记录模型设置到comet
+        if self.monitor.is_active:
+            self.monitor.log_parameter("model_platform", model_platform)
+            self.monitor.log_parameter("model_type", model_type if model_platform.lower() == "ollama" else "GPT_3_5_TURBO")
+            self.monitor.log_parameter("temperature", 0.7)
+            self.monitor.log_parameter("max_tokens", 2000)
+        
         return model
+    
+    def _log_agent_interaction(self, agent_role: str, prompt: str, response: str, **kwargs):
+        """
+        记录智能体交互到Comet监控
+        
+        Args:
+            agent_role: 智能体角色
+            prompt: 输入提示
+            response: 模型响应
+            **kwargs: 其他参数
+        """
+        
+        print(f"self.monitor: {self.monitor.is_active}")
+        
+        if self.monitor.is_active:
+            provider_name = os.getenv("DEFAULT_MODEL_PROVIDER", "openai").upper()
+            try:
+                # 获取模型配置信息
+                model_config = {}
+                if hasattr(self.model, '_config'):
+                    model_config = self.model._config
+                
+                # 提取相关配置
+                temperature = getattr(model_config, 'temperature', 0.7)
+                max_tokens = getattr(model_config, 'max_tokens', 2000)
+                
+                # 记录交互
+                self.monitor.log_model_call(
+                    provider_name=provider_name,
+                    prompt=prompt,
+                    response=response,
+                    model=os.getenv("DEFAULT_MODEL_NAME", "gpt-3.5-turbo"),
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    agent_role=agent_role,
+                    **kwargs
+                )
+            except Exception as e:
+                logger.error(f"Failed to log agent interaction to Comet: {str(e)}")
     
     def _get_policy_info_tool(self):
         """
@@ -261,6 +321,114 @@ class ExpenseReimbursementSystem:
         }
         
         return get_policy_info
+    
+    def _generate_accounting_entry_tool(self):
+        """
+        生成会计分录工具 - 返回符合CAMEL框架期望的可调用工具
+        """
+        # 创建可调用的工具函数
+        def generate_accounting_entry(amount: float, category: str, date: str) -> str:
+            """
+            根据报销金额、类别和日期生成会计分录
+            
+            Args:
+                amount: 金额
+                category: 费用类别
+                date: 日期
+                
+            Returns:
+                会计分录字符串
+            """
+            print(f"generate_accounting_entry: {amount}, {category}, {date}")
+            
+            # 根据费用类别确定会计科目
+            category_to_account = {
+                "meal": "管理费用-餐饮费",
+                "travel": "管理费用-差旅费",
+                "hotel": "管理费用-住宿费",
+                "office_supplies": "管理费用-办公费",
+                "client_entertainment": "管理费用-业务招待费",
+                "training": "管理费用-培训费"
+            }
+            
+            account = category_to_account.get(category, "管理费用-其他")
+            
+            # 生成会计分录
+            entry = f"日期: {date}\n借: {account} {amount}元\n贷: 银行存款 {amount}元\n摘要: 报销{category_to_account.get(category, '其他费用')}"
+            
+            return entry
+        
+        # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+        generate_accounting_entry.name = "generate_accounting_entry"
+        generate_accounting_entry.description = "根据报销信息生成会计分录"
+        generate_accounting_entry.parameters = {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number",
+                    "description": "报销金额"
+                },
+                "category": {
+                    "type": "string",
+                    "description": "费用类别"
+                },
+                "date": {
+                    "type": "string",
+                    "description": "日期"
+                }
+            },
+            "required": ["amount", "category", "date"]
+        }
+        
+        return generate_accounting_entry
+        
+    def _generate_pay_tool(self):
+        """
+        生成付款工具 - 返回符合CAMEL框架期望的可调用工具
+        """
+        # 创建可调用的工具函数
+        def pay(amount: float, recipient: str, bank_account: str) -> str:
+            """
+            处理报销付款
+            
+            Args:
+                amount: 付款金额
+                recipient: 收款人
+                bank_account: 收款银行账户
+                
+            Returns:
+                付款结果字符串
+            """
+            print(f"pay: {amount}, {recipient}, {bank_account}")
+            
+            # 模拟付款处理
+            payment_result = f"付款成功\n金额: {amount}元\n收款人: {recipient}\n收款账户: {bank_account}\n日期: {self._get_current_timestamp()}\n交易ID: PAY{self._get_current_timestamp().replace('-', '').replace(':', '').replace(' ', '')}"
+            
+            return payment_result
+        
+        # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+        pay.name = "pay"
+        pay.description = "处理报销付款"
+        pay.parameters = {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number",
+                    "description": "付款金额"
+                },
+                "recipient": {
+                    "type": "string",
+                    "description": "收款人"
+                },
+                "bank_account": {
+                    "type": "string",
+                    "description": "收款银行账户"
+                }
+            },
+            "required": ["amount", "recipient", "bank_account"]
+        }
+        
+        return pay
         
     def create_agent(self, role_type: str) -> ChatAgent:
         """
@@ -286,12 +454,23 @@ class ExpenseReimbursementSystem:
             content=role_info["role_description"]
         )
         
+        # 根据角色类型选择工具
+        tools = [self._get_policy_info_tool()]
+        
+        # 为会计角色添加记账工具
+        if role_type == "accountant":
+            tools.append(self._generate_accounting_entry_tool())
+        
+        # 为出纳角色添加付款工具
+        if role_type == "cashier":
+            tools.append(self._generate_pay_tool())
+        
         # 创建智能体
         agent = ChatAgent(
             system_message=system_msg,
             model=self.model,
             token_limit=4096,
-            tools=[self._get_policy_info_tool()]
+            tools=tools
         )
         
         # 重置智能体
@@ -376,6 +555,14 @@ class ExpenseReimbursementSystem:
         else:
             review_result = "审批过程中出现问题"
         
+        # 记录到comet监控
+        self._log_agent_interaction(
+            agent_role="manager",
+            prompt=review_request.content,
+            response=review_result,
+            step="manager_review"
+        )
+        
         # 简单的审批逻辑（根据金额和事由决定是否通过）
         # 这里我们模拟经理审批通过的情况，但在实际应用中可以根据业务规则进行更复杂的判断
         is_approved = "同意" in review_result or "通过" in review_result or "批准" in review_result # or self.expense_application['amount'] < 5000
@@ -431,6 +618,14 @@ class ExpenseReimbursementSystem:
             review_result = response.msgs[0].content
         else:
             review_result = "审批过程中出现问题"
+        
+        # 记录到comet监控
+        self._log_agent_interaction(
+            agent_role="department_head",
+            prompt=review_request.content,
+            response=review_result,
+            step="department_head_review"
+        )
         
         # 简单的审批逻辑（检查预算是否足够）
         is_approved = "同意" in review_result or "通过" in review_result or (current_budget > self.expense_application['amount'])
@@ -499,6 +694,14 @@ class ExpenseReimbursementSystem:
         else:
             audit_result = "审核过程中出现问题"
         
+        # 记录到comet监控
+        self._log_agent_interaction(
+            agent_role="financial_auditor",
+            prompt=audit_request.content,
+            response=audit_result,
+            step="financial_audit"
+        )
+        
         # 简单的审核逻辑（检查类别是否允许）
         is_approved = "同意" in audit_result or "通过" in audit_result or \
                       self.expense_application['category'] in self.allowed_categories
@@ -553,6 +756,14 @@ class ExpenseReimbursementSystem:
         else:
             payment_result = "付款过程中出现问题"
         
+        # 记录到comet监控
+        self._log_agent_interaction(
+            agent_role="cashier",
+            prompt=payment_request.content,
+            response=payment_result,
+            step="process_payment"
+        )
+        
         # 更新报销状态
         self.expense_application['status'] = "paid"
         self.current_status = "paid"
@@ -603,6 +814,14 @@ class ExpenseReimbursementSystem:
             recording_result = response.msgs[0].content
         else:
             recording_result = "记账过程中出现问题"
+        
+        # 记录到comet监控
+        self._log_agent_interaction(
+            agent_role="accountant",
+            prompt=recording_request.content,
+            response=recording_result,
+            step="accounting_recording"
+        )
         
         # 记录流程历史
         self.process_history.append({

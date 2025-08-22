@@ -54,7 +54,7 @@ def create_agent(role_type: str, model) -> ChatAgent:
         ChatAgent instance
         ChatAgent实例
     """
-    logger.info(f"Creating agent with role: {role_type}")
+    print(f"Creating agent with role: {role_type}")
     
     if role_type not in travel_roles:
         logger.warning(f"Unknown role type: {role_type}, defaulting to travel_planner")
@@ -97,7 +97,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
         Final travel plan response
         最终旅行计划响应
     """
-    logger.info(f"Starting CAMEL RolePlaying travel planning conversation for request: {user_request}")
+    print(f"Starting CAMEL RolePlaying travel planning conversation for request: {user_request}")
     
     # Setup model
     # 设置模型
@@ -126,7 +126,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     print("Creating task specify agent")
     task_specify_agent = TaskSpecifyAgent(model)
     specified_task = task_specify_agent.run(user_request, meta_dict={"domain": "travel planning"})
-    logger.info(f"Specified task: {specified_task}")
+    print(f"Specified task: {specified_task}")
     
     # 2. Create RolePlaying society for multi-agent collaboration
     # 2. 创建RolePlaying社会进行多智能体协作
@@ -174,7 +174,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
         with_task_planner=False,  # We'll handle planning within the conversation
     )
     
-    logger.info("Starting RolePlaying conversation")
+    print("Starting RolePlaying conversation")
     
     # Initialize the conversation
     # 初始化对话
@@ -206,7 +206,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
             role_play_session.user_agent.update_memory(user_message, OpenAIBackendRole.USER)
         
         if assistant_response.terminated:
-            logger.info("Conversation terminated by assistant")
+            print("Conversation terminated by assistant")
             break
             
         conversation_history.append({
@@ -222,7 +222,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
         # Break if user message indicates completion
         # 如果用户消息表示完成则中断
         if user_message and ("完成" in user_message.content or "满意" in user_message.content or "谢谢" in user_message.content):
-            logger.info("Conversation completed by user satisfaction")
+            print("Conversation completed by user satisfaction")
             break
     
     # Extract the final comprehensive response
@@ -232,7 +232,7 @@ def camel_travel_planning_conversation(user_request: str) -> Dict[str, Any]:
     else:
         final_response = "抱歉，无法生成旅行规划。请稍后重试。"
     
-    logger.info("CAMEL RolePlaying travel planning conversation completed")
+    print("CAMEL RolePlaying travel planning conversation completed")
     return {
         "response": final_response,
         "conversation_history": conversation_history,
@@ -287,7 +287,7 @@ def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
         Task execution result
         任务执行结果
     """
-    logger.info(f"Executing task with agent {agent.role_name}")
+    print(f"Executing task with agent {agent.role_name}")
     
     # Create user message
     # 创建用户消息
@@ -304,7 +304,7 @@ def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
     
     if response.msgs:
         result_content = response.msgs[0].content
-        logger.info(f"Task executed successfully by agent {agent.role_name} with result: {result_content}")
+        print(f"Task executed successfully by agent {agent.role_name} with result: {result_content}")
         return result_content
     else:
         logger.warning(f"Failed to execute task with agent {agent.role_name}")
@@ -313,7 +313,7 @@ def execute_agent_task(agent: ChatAgent, task_description: str) -> str:
 def main():
     """Main function to run the CAMEL-AI travel planner.
     运行CAMEL-AI旅行规划器的主函数"""
-    logger.info("Starting CAMEL-AI Multi-Role Travel Planner")
+    print("Starting CAMEL-AI Multi-Role Travel Planner")
     print("CAMEL-AI Multi-Role Travel Planner")
     print("=" * 40)
     
@@ -329,7 +329,7 @@ def main():
     
     print(f"\n正在处理您的请求: {user_request}")
     print("请稍候...")
-    logger.info(f"Processing user request: {user_request}")
+    print(f"Processing user request: {user_request}")
     
     # Process the travel request
     # 处理旅行请求
@@ -350,7 +350,7 @@ def main():
         for key, value in result["details"].items():
             print(f"- {key}: {value}")
     
-    logger.info("Displayed travel plan result to user")
+    print("Displayed travel plan result to user")
 
 
 if __name__ == "__main__":

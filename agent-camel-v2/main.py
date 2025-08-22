@@ -21,7 +21,7 @@ from examples.camel_travel_planner import camel_travel_planning_conversation
 def main():
     """Main function to run the Agent-Camel application.
     运行Agent-Camel应用程序的主函数"""
-    logger.info("Starting Agent-Camel V2 application")
+    print("Starting Agent-Camel V2 application")
     print("Agent-Camel V2 - Intelligent Agent Application (Powered by CAMEL-AI)")
     print("=" * 70)
     
@@ -47,13 +47,13 @@ def main():
     
     print(f"\n正在处理您的请求: {user_request}")
     print("请稍候...")
-    logger.info(f"Processing user request: {user_request}")
+    print(f"Processing user request: {user_request}")
     
     # Process the travel request using CAMEL-AI
     # 使用CAMEL-AI处理旅行请求
     print("Calling camel_travel_planning_conversation function")
     result = camel_travel_planning_conversation(user_request)
-    logger.info("Travel request processing completed")
+    print("Travel request processing completed")
     
     # Display the result
     # 显示结果
@@ -70,7 +70,7 @@ def main():
         print("\n详细信息:")
         for key, value in result["details"].items():
             print(f"- {key}: {value}")
-    logger.info("Application execution completed")
+    print("Application execution completed")
 
 
 if __name__ == "__main__":

@@ -34,7 +34,7 @@ class MemoryManager:
                                                     # 会话上下文
         self.interactions: Dict[str, List[Dict[str, Any]]] = {}  # Interaction history
                                                       # 交互历史
-        logger.info(f"Initialized MemoryManager for agent {agent_id}")
+        print(f"Initialized MemoryManager for agent {agent_id}")
         self.load_from_storage()  # Load existing memory from storage
                         # 从存储中加载现有记忆
     
@@ -142,13 +142,13 @@ class MemoryManager:
             session_id: Session identifier
                     会话标识符
         """
-        logger.info(f"Compressing context for session {session_id} in agent {self.agent_id}")
+        print(f"Compressing context for session {session_id} in agent {self.agent_id}")
         # Simple implementation - keep last 20 messages
         # 简单实现 - 保留最后20条消息
         if session_id in self.contexts:
             original_length = len(self.contexts[session_id])
             self.contexts[session_id] = self.contexts[session_id][-20:]
-            logger.info(f"Compressed context for session {session_id} from {original_length} to {len(self.contexts[session_id])} messages")
+            print(f"Compressed context for session {session_id} from {original_length} to {len(self.contexts[session_id])} messages")
     
     def cleanup_old_sessions(self) -> None:
         """
@@ -167,7 +167,7 @@ class MemoryManager:
         Save memory to persistent storage.
         将记忆保存到持久化存储
         """
-        logger.info(f"Saving memory to storage for agent {self.agent_id}")
+        print(f"Saving memory to storage for agent {self.agent_id}")
         # Placeholder implementation
         # 占位符实现
         # In a real implementation, we would save to a database or file system
@@ -179,7 +179,7 @@ class MemoryManager:
         Load memory from persistent storage.
         从持久化存储加载记忆
         """
-        logger.info(f"Loading memory from storage for agent {self.agent_id}")
+        print(f"Loading memory from storage for agent {self.agent_id}")
         # Placeholder implementation
         # 占位符实现
         # In a real implementation, we would load from a database or file system

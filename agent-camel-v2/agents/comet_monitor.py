@@ -35,6 +35,8 @@ class CometMonitor:
         self.experiment = None
         self.is_active = False
         
+        print(f"Initializing Comet ML monitor...{COMET_AVAILABLE} {settings.COMET_API_KEY} {settings.COMET_LOG_MODEL_CALLS}")
+        
         # 仅当comet_ml可用且配置了API密钥时才初始化
         if COMET_AVAILABLE and settings.COMET_API_KEY and settings.COMET_LOG_MODEL_CALLS:
             try:
@@ -57,6 +59,22 @@ class CometMonitor:
         elif not settings.COMET_LOG_MODEL_CALLS:
             print("Comet ML监控已禁用 (COMET_LOG_MODEL_CALLS=False)")
         
+    def log_parameter(self, name: str, value):
+        """
+        记录单个参数到Comet ML
+        
+        Args:
+            name: 参数名称
+            value: 参数值
+        """
+        if not self.is_active or self.experiment is None:
+            return
+        
+        try:
+            self.experiment.log_parameter(name, value)
+        except Exception as e:
+            print(f"记录参数到Comet ML失败: {str(e)}")
+            
     def log_model_call(self, provider_name: str, prompt: str, response: str, **kwargs):
         """
         记录模型调用信息到Comet ML

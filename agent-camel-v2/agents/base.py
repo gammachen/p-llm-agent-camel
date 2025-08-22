@@ -39,7 +39,7 @@ class BaseAgent(ABC):
         self.memory = MemoryManager(agent_id)
         self.tools = ToolLibrary()
         self.model = ModelProviderFactory.get_provider(model_provider)
-        logger.info(f"Initialized agent {agent_id} with role: {role} using {model_provider} model provider")
+        print(f"Initialized agent {agent_id} with role: {role} using {model_provider} model provider")
     
     @abstractmethod
     def process_message(self, message: Dict[str, Any], session_id: str) -> Dict[str, Any]:
@@ -168,7 +168,7 @@ class BaseAgent(ABC):
             Tool execution result
             工具执行结果
         """
-        logger.info(f"Agent {self.agent_id} using tool: {tool_name}")
+        print(f"Agent {self.agent_id} using tool: {tool_name}")
         try:
             result = self.tools.execute(tool_name, parameters)
             print(f"Tool {tool_name} executed successfully by agent {self.agent_id}")
