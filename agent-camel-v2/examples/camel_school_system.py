@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 from agents.base import BaseAgent
 from agents.model_provider import ModelProviderFactory
 from memory.manager import MemoryManager
-from tools.library import ToolLibrary, Tool
+from tools.library import ToolLibrary
 
 from camel.societies import RolePlaying
 from camel.models import ModelFactory
@@ -288,10 +288,10 @@ class StudentAgent(SchoolAgent):
         """
         注册学生代理特有的工具
         """
-        self.tools.register_tool(StudyPlanTool())
-        self.tools.register_tool(TaskTrackerTool())
-        self.tools.register_tool(RequestSubmissionTool())
-        self.tools.register_tool(DataDashboardTool())
+        self.tools.register_tool(get_study_plan_tool())
+        self.tools.register_tool(get_task_tracker_tool())
+        self.tools.register_tool(get_request_submission_tool())
+        self.tools.register_tool(get_data_dashboard_tool())
 
 
 # 定义学科教师代理 (Subject Teacher Agent)
@@ -319,10 +319,10 @@ class SubjectTeacherAgent(SchoolAgent):
         """
         注册学科教师代理特有的工具
         """
-        self.tools.register_tool(AssignmentGradingTool())
-        self.tools.register_tool(LearningAnalyticsTool())
-        self.tools.register_tool(ScheduleManagementTool())
-        self.tools.register_tool(CommunicationHubTool())
+        self.tools.register_tool(get_assignment_grading_tool())
+        self.tools.register_tool(get_learning_analytics_tool())
+        self.tools.register_tool(get_schedule_management_tool())
+        self.tools.register_tool(get_communication_hub_tool())
 
 
 # 定义阅卷代理 (Grading Agent)
@@ -345,9 +345,9 @@ class GradingAgent(SchoolAgent):
         """
         注册阅卷代理特有的工具
         """
-        self.tools.register_tool(MultiModalGradingTool())
-        self.tools.register_tool(LearningInsightsTool())
-        self.tools.register_tool(DataDistributionTool())
+        self.tools.register_tool(get_multi_modal_grading_tool())
+        self.tools.register_tool(get_learning_insights_tool())
+        self.tools.register_tool(get_data_distribution_tool())
 
 
 # 定义班主任代理 (Head Teacher Agent)
@@ -375,9 +375,9 @@ class HeadTeacherAgent(SchoolAgent):
         """
         注册班主任代理特有的工具
         """
-        self.tools.register_tool(ClassControlTool())
-        self.tools.register_tool(EarlyWarningTool())
-        self.tools.register_tool(ParentCommunicationTool())
+        self.tools.register_tool(get_class_control_tool())
+        self.tools.register_tool(get_early_warning_tool())
+        self.tools.register_tool(get_parent_communication_tool())
 
 
 # 定义家长代理 (Parent Agent)
@@ -405,9 +405,9 @@ class ParentAgent(SchoolAgent):
         """
         注册家长代理特有的工具
         """
-        self.tools.register_tool(SchoolTransparencyTool())
-        self.tools.register_tool(AuthorizedCommunicationTool())
-        self.tools.register_tool(GrowthRecordTool())
+        self.tools.register_tool(get_school_transparency_tool())
+        self.tools.register_tool(get_authorized_communication_tool())
+        self.tools.register_tool(get_growth_record_tool())
 
 
 # 定义教务行政代理 (Academic Admin Agent)
@@ -430,9 +430,9 @@ class AcademicAdminAgent(SchoolAgent):
         """
         注册教务行政代理特有的工具
         """
-        self.tools.register_tool(ResourceSchedulingTool())
-        self.tools.register_tool(ActivityManagementTool())
-        self.tools.register_tool(RecordManagementTool())
+        self.tools.register_tool(get_resource_scheduling_tool())
+        self.tools.register_tool(get_activity_management_tool())
+        self.tools.register_tool(get_record_management_tool())
 
 
 # 定义医务代理 (Medical Agent)
@@ -455,9 +455,9 @@ class MedicalAgent(SchoolAgent):
         """
         注册医务代理特有的工具
         """
-        self.tools.register_tool(HealthMonitoringTool())
-        self.tools.register_tool(EmergencyResponseTool())
-        self.tools.register_tool(ConsultationTool())
+        self.tools.register_tool(get_health_monitoring_tool())
+        self.tools.register_tool(get_emergency_response_tool())
+        self.tools.register_tool(get_consultation_tool())
 
 
 # 定义营养膳食代理 (Dietitian Agent)
@@ -480,9 +480,9 @@ class DietitianAgent(SchoolAgent):
         """
         注册营养膳食代理特有的工具
         """
-        self.tools.register_tool(RecipeOptimizationTool())
-        self.tools.register_tool(SafetyTraceabilityTool())
-        self.tools.register_tool(PersonalizedMealTool())
+        self.tools.register_tool(get_recipe_optimization_tool())
+        self.tools.register_tool(get_safety_traceability_tool())
+        self.tools.register_tool(get_personalized_meal_tool())
 
 
 # 定义安保代理 (Security Agent)
@@ -505,9 +505,9 @@ class SecurityAgent(SchoolAgent):
         """
         注册安保代理特有的工具
         """
-        self.tools.register_tool(IntelligentPatrolTool())
-        self.tools.register_tool(EmergencyBroadcastTool())
-        self.tools.register_tool(VisitorManagementTool())
+        self.tools.register_tool(get_intelligent_patrol_tool())
+        self.tools.register_tool(get_emergency_broadcast_tool())
+        self.tools.register_tool(get_visitor_management_tool())
 
 
 # 定义校长/教导主任代理 (Principal Agent)
@@ -530,24 +530,26 @@ class PrincipalAgent(SchoolAgent):
         """
         注册校长代理特有的工具
         """
-        self.tools.register_tool(DecisionCockpitTool())
-        self.tools.register_tool(TrendInsightTool())
-        self.tools.register_tool(ResourcePlanningTool())
+        self.tools.register_tool(get_decision_cockpit_tool())
+        self.tools.register_tool(get_trend_insight_tool())
+        self.tools.register_tool(get_resource_planning_tool())
 
 
 # 定义学校智能系统中的工具
-class StudyPlanTool(Tool):
+def get_study_plan_tool() -> Callable:
     """
-    学习计划工具 - 管理个人学习计划，智能推送复习内容
+    获取学习计划工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "study_plan",
-            "管理个人学习计划，智能推送复习内容"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def study_plan(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        管理个人学习计划，智能推送复习内容
+        
+        Args:
+            parameters: 包含学生ID和科目的参数字典
+            
+        Returns:
+            学习计划结果字典
+        """
         student_id = parameters.get("student_id")
         subject = parameters.get("subject", "")
         logger.info(f"为学生 {student_id} 生成{subject}学习计划")
@@ -561,20 +563,41 @@ class StudyPlanTool(Tool):
         }
         
         return {"status": "success", "data": plan}
-
-
-class TaskTrackerTool(Tool):
-    """
-    任务跟踪工具 - 接收、跟踪并提醒作业、考试、活动报名等截止日期
-    """
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    study_plan.name = "study_plan"
+    study_plan.description = "管理个人学习计划，智能推送复习内容"
+    study_plan.parameters = {
+        "type": "object",
+        "properties": {
+            "student_id": {
+                "type": "string",
+                "description": "学生ID"
+            },
+            "subject": {
+                "type": "string",
+                "description": "学习科目"
+            }
+        },
+        "required": ["student_id"]
+    }
     
-    def __init__(self):
-        super().__init__(
-            "task_tracker",
-            "接收、跟踪并提醒作业、考试、活动报名等截止日期"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    return study_plan
+
+def get_task_tracker_tool() -> Callable:
+    """
+    获取任务跟踪工具 - 返回可调用的函数
+    """
+    def task_tracker(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        接收、跟踪并提醒作业、考试、活动报名等截止日期
+        
+        Args:
+            parameters: 包含学生ID的参数字典
+            
+        Returns:
+            任务跟踪结果字典
+        """
         student_id = parameters.get("student_id")
         logger.info(f"为学生 {student_id} 跟踪任务")
         
@@ -586,20 +609,38 @@ class TaskTrackerTool(Tool):
         ]
         
         return {"status": "success", "data": tasks}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    task_tracker.name = "task_tracker"
+    task_tracker.description = "接收、跟踪并提醒作业、考试、活动报名等截止日期"
+    task_tracker.parameters = {
+        "type": "object",
+        "properties": {
+            "student_id": {
+                "type": "string",
+                "description": "学生ID"
+            }
+        },
+        "required": ["student_id"]
+    }
+    
+    return task_tracker
 
 
-class RequestSubmissionTool(Tool):
+def get_request_submission_tool() -> Callable:
     """
-    请求提交工具 - 代理学生向教师、医务、食堂等Agent提交请求
+    获取请求提交工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "request_submission",
-            "代理学生向教师、医务、食堂等Agent提交请求（请假、问询、提交作业）"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def request_submission(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        代理学生向教师、医务、食堂等Agent提交请求
+        
+        Args:
+            parameters: 包含学生ID、请求类型、请求内容和目标Agent的参数字典
+            
+        Returns:
+            请求提交结果字典
+        """
         student_id = parameters.get("student_id")
         request_type = parameters.get("request_type")
         request_content = parameters.get("request_content")
@@ -621,20 +662,50 @@ class RequestSubmissionTool(Tool):
                 "submission_time": time.strftime("%Y-%m-%d %H:%M:%S")
             }
         }
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    request_submission.name = "request_submission"
+    request_submission.description = "代理学生向教师、医务、食堂等Agent提交请求（请假、问询、提交作业）"
+    request_submission.parameters = {
+        "type": "object",
+        "properties": {
+            "student_id": {
+                "type": "string",
+                "description": "学生ID"
+            },
+            "request_type": {
+                "type": "string",
+                "description": "请求类型"
+            },
+            "request_content": {
+                "type": "string",
+                "description": "请求内容"
+            },
+            "target_agent": {
+                "type": "string",
+                "description": "目标Agent"
+            }
+        },
+        "required": ["student_id", "request_type", "request_content", "target_agent"]
+    }
+    
+    return request_submission
 
 
-class DataDashboardTool(Tool):
+def get_data_dashboard_tool() -> Callable:
     """
-    数据看板工具 - 可视化展示个人成绩趋势、知识图谱薄弱点、体能健康变化
+    获取数据看板工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "data_dashboard",
-            "可视化展示个人成绩趋势、知识图谱薄弱点、体能健康变化"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def data_dashboard(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        可视化展示个人成绩趋势、知识图谱薄弱点、体能健康变化
+        
+        Args:
+            parameters: 包含学生ID的参数字典
+            
+        Returns:
+            数据看板结果字典
+        """
         student_id = parameters.get("student_id")
         logger.info(f"为学生 {student_id} 生成数据看板")
         
@@ -651,20 +722,38 @@ class DataDashboardTool(Tool):
         }
         
         return {"status": "success", "data": dashboard_data}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    data_dashboard.name = "data_dashboard"
+    data_dashboard.description = "可视化展示个人成绩趋势、知识图谱薄弱点、体能健康变化"
+    data_dashboard.parameters = {
+        "type": "object",
+        "properties": {
+            "student_id": {
+                "type": "string",
+                "description": "学生ID"
+            }
+        },
+        "required": ["student_id"]
+    }
+    
+    return data_dashboard
 
 
-class AssignmentGradingTool(Tool):
+def get_assignment_grading_tool() -> Callable:
     """
-    作业批改工具 - 自动批改客观题、生成作业报告、推荐个性化习题
+    获取作业批改工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "assignment_grading",
-            "自动批改客观题、生成作业报告、推荐个性化习题"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def assignment_grading(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        自动批改客观题、生成作业报告、推荐个性化习题
+        
+        Args:
+            parameters: 包含教师ID、班级ID和作业ID的参数字典
+            
+        Returns:
+            作业批改结果字典
+        """
         teacher_id = parameters.get("teacher_id")
         class_id = parameters.get("class_id")
         assignment_id = parameters.get("assignment_id")
@@ -682,20 +771,46 @@ class AssignmentGradingTool(Tool):
         }
         
         return {"status": "success", "data": grading_result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    assignment_grading.name = "assignment_grading"
+    assignment_grading.description = "自动批改客观题、生成作业报告、推荐个性化习题"
+    assignment_grading.parameters = {
+        "type": "object",
+        "properties": {
+            "teacher_id": {
+                "type": "string",
+                "description": "教师ID"
+            },
+            "class_id": {
+                "type": "string",
+                "description": "班级ID"
+            },
+            "assignment_id": {
+                "type": "string",
+                "description": "作业ID"
+            }
+        },
+        "required": ["teacher_id", "class_id", "assignment_id"]
+    }
+    
+    return assignment_grading
 
 
-class MultiModalGradingTool(Tool):
+def get_multi_modal_grading_tool() -> Callable:
     """
-    多模态批改工具 - 支持文本、图像等多种形式的作业批改
+    获取多模态批改工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "multi_modal_grading",
-            "支持文本、图像等多种形式的作业批改"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def multi_modal_grading(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        支持文本、图像等多种形式的作业批改
+        
+        Args:
+            parameters: 包含作业ID的参数字典
+            
+        Returns:
+            多模态批改结果字典
+        """
         assignment_id = parameters.get("assignment_id")
         logger.info(f"批改作业 {assignment_id}")
         
@@ -708,20 +823,38 @@ class MultiModalGradingTool(Tool):
         }
         
         return {"status": "success", "data": result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    multi_modal_grading.name = "multi_modal_grading"
+    multi_modal_grading.description = "支持文本、图像等多种形式的作业批改"
+    multi_modal_grading.parameters = {
+        "type": "object",
+        "properties": {
+            "assignment_id": {
+                "type": "string",
+                "description": "作业ID"
+            }
+        },
+        "required": ["assignment_id"]
+    }
+    
+    return multi_modal_grading
 
 
-class LearningInsightsTool(Tool):
+def get_learning_insights_tool() -> Callable:
     """
-    学情洞察工具 - 分析学生学习情况，提供个性化教学建议
+    获取学情洞察工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "learning_insights",
-            "分析学生学习情况，提供个性化教学建议"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def learning_insights(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        分析学生学习情况，提供个性化教学建议
+        
+        Args:
+            parameters: 包含班级ID的参数字典
+            
+        Returns:
+            学情分析结果字典
+        """
         class_id = parameters.get("class_id")
         logger.info(f"分析班级 {class_id} 的学情")
         
@@ -735,20 +868,38 @@ class LearningInsightsTool(Tool):
         }
         
         return {"status": "success", "data": insights}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    learning_insights.name = "learning_insights"
+    learning_insights.description = "分析学生学习情况，提供个性化教学建议"
+    learning_insights.parameters = {
+        "type": "object",
+        "properties": {
+            "class_id": {
+                "type": "string",
+                "description": "班级ID"
+            }
+        },
+        "required": ["class_id"]
+    }
+    
+    return learning_insights
 
 
-class DataDistributionTool(Tool):
+def get_data_distribution_tool() -> Callable:
     """
-    数据分发工具 - 将批改结果和学情分析分发给相关教师和学生
+    获取数据分发工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "data_distribution",
-            "将批改结果和学情分析分发给相关教师和学生"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def data_distribution(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        将批改结果和学情分析分发给相关教师和学生
+        
+        Args:
+            parameters: 包含数据ID和接收者的参数字典
+            
+        Returns:
+            数据分发结果字典
+        """
         data_id = parameters.get("data_id")
         recipients = parameters.get("recipients", [])
         logger.info(f"分发数据 {data_id} 给 {recipients}")
@@ -762,20 +913,45 @@ class DataDistributionTool(Tool):
         }
         
         return {"status": "success", "data": result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    data_distribution.name = "data_distribution"
+    data_distribution.description = "将批改结果和学情分析分发给相关教师和学生"
+    data_distribution.parameters = {
+        "type": "object",
+        "properties": {
+            "data_id": {
+                "type": "string",
+                "description": "数据ID"
+            },
+            "recipients": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "接收者列表"
+            }
+        },
+        "required": ["data_id"]
+    }
+    
+    return data_distribution
 
 
-class ClassControlTool(Tool):
+def get_class_control_tool() -> Callable:
     """
-    班级总控工具 - 提供班级整体情况监控和管理功能
+    获取班级总控工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "class_control",
-            "提供班级整体情况监控和管理功能"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def class_control(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        提供班级整体情况监控和管理功能
+        
+        Args:
+            parameters: 包含班级ID的参数字典
+            
+        Returns:
+            班级总控结果字典
+        """
         class_id = parameters.get("class_id")
         logger.info(f"管理班级 {class_id}")
         
@@ -789,20 +965,38 @@ class ClassControlTool(Tool):
         }
         
         return {"status": "success", "data": result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    class_control.name = "class_control"
+    class_control.description = "提供班级整体情况监控和管理功能"
+    class_control.parameters = {
+        "type": "object",
+        "properties": {
+            "class_id": {
+                "type": "string",
+                "description": "班级ID"
+            }
+        },
+        "required": ["class_id"]
+    }
+    
+    return class_control
 
 
-class EarlyWarningTool(Tool):
+def get_early_warning_tool() -> Callable:
     """
-    预警干预工具 - 识别学生异常情况并提供干预建议
+    获取预警干预工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "early_warning",
-            "识别学生异常情况并提供干预建议"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def early_warning(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        识别学生异常情况并提供干预建议
+        
+        Args:
+            parameters: 包含班级ID的参数字典
+            
+        Returns:
+            预警信息列表
+        """
         class_id = parameters.get("class_id")
         logger.info(f"监控班级 {class_id} 的异常情况")
         
@@ -813,20 +1007,38 @@ class EarlyWarningTool(Tool):
         ]
         
         return {"status": "success", "data": warnings}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    early_warning.name = "early_warning"
+    early_warning.description = "识别学生异常情况并提供干预建议"
+    early_warning.parameters = {
+        "type": "object",
+        "properties": {
+            "class_id": {
+                "type": "string",
+                "description": "班级ID"
+            }
+        },
+        "required": ["class_id"]
+    }
+    
+    return early_warning
 
 
-class ParentCommunicationTool(Tool):
+def get_parent_communication_tool() -> Callable:
     """
-    家校沟通工具 - 促进班主任与家长之间的有效沟通
+    获取家校沟通工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "parent_communication",
-            "促进班主任与家长之间的有效沟通"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def parent_communication(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        促进班主任与家长之间的有效沟通
+        
+        Args:
+            parameters: 包含教师ID、家长ID和消息内容的参数字典
+            
+        Returns:
+            家校沟通结果字典
+        """
         teacher_id = parameters.get("teacher_id")
         parent_id = parameters.get("parent_id")
         message = parameters.get("message")
@@ -843,20 +1055,46 @@ class ParentCommunicationTool(Tool):
         }
         
         return {"status": "success", "data": result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    parent_communication.name = "parent_communication"
+    parent_communication.description = "促进班主任与家长之间的有效沟通"
+    parent_communication.parameters = {
+        "type": "object",
+        "properties": {
+            "teacher_id": {
+                "type": "string",
+                "description": "教师ID"
+            },
+            "parent_id": {
+                "type": "string",
+                "description": "家长ID"
+            },
+            "message": {
+                "type": "string",
+                "description": "沟通消息内容"
+            }
+        },
+        "required": ["teacher_id", "parent_id", "message"]
+    }
+    
+    return parent_communication
 
 
-class LearningAnalyticsTool(Tool):
+def get_learning_analytics_tool() -> Callable:
     """
-    学情分析工具 - 分析学生学习数据，提供教学改进建议
+    获取学情分析工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "learning_analytics",
-            "分析学生学习数据，提供教学改进建议"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def learning_analytics(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        分析学生学习数据，提供教学改进建议
+        
+        Args:
+            parameters: 包含学科和班级ID的参数字典
+            
+        Returns:
+            学情分析结果字典
+        """
         subject = parameters.get("subject")
         class_id = parameters.get("class_id")
         logger.info(f"分析 {class_id} 班级 {subject} 学科的学情")
@@ -875,20 +1113,42 @@ class LearningAnalyticsTool(Tool):
         }
         
         return {"status": "success", "data": analysis}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    learning_analytics.name = "learning_analytics"
+    learning_analytics.description = "分析学生学习数据，提供教学改进建议"
+    learning_analytics.parameters = {
+        "type": "object",
+        "properties": {
+            "subject": {
+                "type": "string",
+                "description": "学科名称"
+            },
+            "class_id": {
+                "type": "string",
+                "description": "班级ID"
+            }
+        },
+        "required": ["subject", "class_id"]
+    }
+    
+    return learning_analytics
 
 
-class ScheduleManagementTool(Tool):
+def get_schedule_management_tool() -> Callable:
     """
-    日程管理工具 - 帮助教师管理教学计划和日程安排
+    获取日程管理工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "schedule_management",
-            "帮助教师管理教学计划和日程安排"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def schedule_management(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        帮助教师管理教学计划和日程安排
+        
+        Args:
+            parameters: 包含教师ID和日期的参数字典
+            
+        Returns:
+            日程安排列表
+        """
         teacher_id = parameters.get("teacher_id")
         date = parameters.get("date", time.strftime("%Y-%m-%d"))
         logger.info(f"管理教师 {teacher_id} 在 {date} 的日程")
@@ -902,20 +1162,42 @@ class ScheduleManagementTool(Tool):
         ]
         
         return {"status": "success", "data": schedule}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    schedule_management.name = "schedule_management"
+    schedule_management.description = "帮助教师管理教学计划和日程安排"
+    schedule_management.parameters = {
+        "type": "object",
+        "properties": {
+            "teacher_id": {
+                "type": "string",
+                "description": "教师ID"
+            },
+            "date": {
+                "type": "string",
+                "description": "日期，格式：YYYY-MM-DD"
+            }
+        },
+        "required": ["teacher_id"]
+    }
+    
+    return schedule_management
 
 
-class CommunicationHubTool(Tool):
+def get_communication_hub_tool() -> Callable:
     """
-    沟通中枢工具 - 集中管理教师与学生、家长、同事之间的沟通
+    获取沟通中枢工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "communication_hub",
-            "集中管理教师与学生、家长、同事之间的沟通"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def communication_hub(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        集中管理教师与学生、家长、同事之间的沟通
+        
+        Args:
+            parameters: 包含教师ID的参数字典
+            
+        Returns:
+            沟通信息列表
+        """
         teacher_id = parameters.get("teacher_id")
         logger.info(f"获取教师 {teacher_id} 的沟通信息")
         
@@ -927,20 +1209,38 @@ class CommunicationHubTool(Tool):
         ]
         
         return {"status": "success", "data": communications}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    communication_hub.name = "communication_hub"
+    communication_hub.description = "集中管理教师与学生、家长、同事之间的沟通"
+    communication_hub.parameters = {
+        "type": "object",
+        "properties": {
+            "teacher_id": {
+                "type": "string",
+                "description": "教师ID"
+            }
+        },
+        "required": ["teacher_id"]
+    }
+    
+    return communication_hub
 
 
-class SchoolTransparencyTool(Tool):
+def get_school_transparency_tool() -> Callable:
     """
-    透明校园工具 - 向家长提供学校的各项信息和通知
+    获取透明校园工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "school_transparency",
-            "向家长提供学校的各项信息和通知"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def school_transparency(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        向家长提供学校的各项信息和通知
+        
+        Args:
+            parameters: 包含家长ID的参数字典
+            
+        Returns:
+            学校信息和通知字典
+        """
         parent_id = parameters.get("parent_id")
         logger.info(f"为家长 {parent_id} 提供学校信息")
         
@@ -952,20 +1252,38 @@ class SchoolTransparencyTool(Tool):
         }
         
         return {"status": "success", "data": info}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    school_transparency.name = "school_transparency"
+    school_transparency.description = "向家长提供学校的各项信息和通知"
+    school_transparency.parameters = {
+        "type": "object",
+        "properties": {
+            "parent_id": {
+                "type": "string",
+                "description": "家长ID"
+            }
+        },
+        "required": ["parent_id"]
+    }
+    
+    return school_transparency
 
 
-class AuthorizedCommunicationTool(Tool):
+def get_authorized_communication_tool() -> Callable:
     """
-    授权沟通工具 - 允许家长与学校各部门进行授权沟通
+    获取授权沟通工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "authorized_communication",
-            "允许家长与学校各部门进行授权沟通"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def authorized_communication(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        允许家长与学校各部门进行授权沟通
+        
+        Args:
+            parameters: 包含家长ID、部门和消息的参数字典
+            
+        Returns:
+            沟通结果字典
+        """
         parent_id = parameters.get("parent_id")
         department = parameters.get("department")
         message = parameters.get("message")
@@ -982,20 +1300,46 @@ class AuthorizedCommunicationTool(Tool):
         }
         
         return {"status": "success", "data": result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    authorized_communication.name = "authorized_communication"
+    authorized_communication.description = "允许家长与学校各部门进行授权沟通"
+    authorized_communication.parameters = {
+        "type": "object",
+        "properties": {
+            "parent_id": {
+                "type": "string",
+                "description": "家长ID"
+            },
+            "department": {
+                "type": "string",
+                "description": "学校部门"
+            },
+            "message": {
+                "type": "string",
+                "description": "沟通消息"
+            }
+        },
+        "required": ["parent_id", "department", "message"]
+    }
+    
+    return authorized_communication
 
 
-class GrowthRecordTool(Tool):
+def get_growth_record_tool() -> Callable:
     """
-    成长档案工具 - 记录学生在校期间的成长和发展情况
+    获取成长档案工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "growth_record",
-            "记录学生在校期间的成长和发展情况"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def growth_record(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        记录学生在校期间的成长和发展情况
+        
+        Args:
+            parameters: 包含学生ID的参数字典
+            
+        Returns:
+            学生成长档案字典
+        """
         child_id = parameters.get("child_id")
         logger.info(f"获取学生 {child_id} 的成长档案")
         
@@ -1009,20 +1353,38 @@ class GrowthRecordTool(Tool):
         }
         
         return {"status": "success", "data": record}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    growth_record.name = "growth_record"
+    growth_record.description = "记录学生在校期间的成长和发展情况"
+    growth_record.parameters = {
+        "type": "object",
+        "properties": {
+            "child_id": {
+                "type": "string",
+                "description": "学生ID"
+            }
+        },
+        "required": ["child_id"]
+    }
+    
+    return growth_record
 
 
-class ResourceSchedulingTool(Tool):
+def get_resource_scheduling_tool() -> Callable:
     """
-    资源调度工具 - 管理和调度学校的各种资源（教室、设备等）
+    获取资源调度工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "resource_scheduling",
-            "管理和调度学校的各种资源（教室、设备等）"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def resource_scheduling(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        管理和调度学校的各种资源（教室、设备等）
+        
+        Args:
+            parameters: 包含资源类型和日期的参数字典
+            
+        Returns:
+            资源调度信息字典
+        """
         resource_type = parameters.get("resource_type")
         date = parameters.get("date", time.strftime("%Y-%m-%d"))
         logger.info(f"调度 {resource_type} 资源在 {date} 的使用")
@@ -1039,20 +1401,43 @@ class ResourceSchedulingTool(Tool):
         }
         
         return {"status": "success", "data": schedule}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    resource_scheduling.name = "resource_scheduling"
+    resource_scheduling.description = "管理和调度学校的各种资源（教室、设备等）"
+    resource_scheduling.parameters = {
+        "type": "object",
+        "properties": {
+            "resource_type": {
+                "type": "string",
+                "description": "资源类型"
+            },
+            "date": {
+                "type": "string",
+                "description": "日期 (格式: YYYY-MM-DD)",
+                "default": time.strftime("%Y-%m-%d")
+            }
+        },
+        "required": ["resource_type"]
+    }
+    
+    return resource_scheduling
 
 
-class ActivityManagementTool(Tool):
+def get_activity_management_tool() -> Callable:
     """
-    活动管理工具 - 管理学校的各项活动和事件
+    获取活动管理工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "activity_management",
-            "管理学校的各项活动和事件"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def activity_management(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        管理学校的各项活动和事件
+        
+        Args:
+            parameters: 参数字典（此工具不需要特定参数）
+            
+        Returns:
+            学校活动列表
+        """
         logger.info("管理学校活动")
         
         # 模拟活动管理
@@ -1063,20 +1448,33 @@ class ActivityManagementTool(Tool):
         ]
         
         return {"status": "success", "data": activities}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    activity_management.name = "activity_management"
+    activity_management.description = "管理学校的各项活动和事件"
+    activity_management.parameters = {
+        "type": "object",
+        "properties": {},
+        "required": []
+    }
+    
+    return activity_management
 
 
-class RecordManagementTool(Tool):
+def get_record_management_tool() -> Callable:
     """
-    档案管理工具 - 管理学校的各种档案和记录
+    获取档案管理工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "record_management",
-            "管理学校的各种档案和记录"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def record_management(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        管理学校的各种档案和记录
+        
+        Args:
+            parameters: 包含档案类型的参数字典
+            
+        Returns:
+            档案记录列表
+        """
         record_type = parameters.get("record_type")
         logger.info(f"管理 {record_type} 类型的档案")
         
@@ -1088,20 +1486,38 @@ class RecordManagementTool(Tool):
         ]
         
         return {"status": "success", "data": records}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    record_management.name = "record_management"
+    record_management.description = "管理学校的各种档案和记录"
+    record_management.parameters = {
+        "type": "object",
+        "properties": {
+            "record_type": {
+                "type": "string",
+                "description": "档案类型"
+            }
+        },
+        "required": ["record_type"]
+    }
+    
+    return record_management
 
 
-class HealthMonitoringTool(Tool):
+def get_health_monitoring_tool() -> Callable:
     """
-    健康监测工具 - 监测学生的健康状况和疫情防控
+    获取健康监测工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "health_monitoring",
-            "监测学生的健康状况和疫情防控"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def health_monitoring(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        监测学生的健康状况和疫情防控
+        
+        Args:
+            parameters: 包含班级ID的参数字典
+            
+        Returns:
+            健康监测数据字典
+        """
         class_id = parameters.get("class_id")
         logger.info(f"监测班级 {class_id} 的健康状况")
         
@@ -1114,20 +1530,38 @@ class HealthMonitoringTool(Tool):
         }
         
         return {"status": "success", "data": health_data}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    health_monitoring.name = "health_monitoring"
+    health_monitoring.description = "监测学生的健康状况和疫情防控"
+    health_monitoring.parameters = {
+        "type": "object",
+        "properties": {
+            "class_id": {
+                "type": "string",
+                "description": "班级ID"
+            }
+        },
+        "required": ["class_id"]
+    }
+    
+    return health_monitoring
 
 
-class EmergencyResponseTool(Tool):
+def get_emergency_response_tool() -> Callable:
     """
-    应急响应工具 - 处理学校内的紧急情况和突发事件
+    获取应急响应工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "emergency_response",
-            "处理学校内的紧急情况和突发事件"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def emergency_response(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        处理学校内的紧急情况和突发事件
+        
+        Args:
+            parameters: 包含紧急情况类型和位置的参数字典
+            
+        Returns:
+            应急响应计划字典
+        """
         emergency_type = parameters.get("emergency_type")
         location = parameters.get("location")
         logger.info(f"处理 {emergency_type} 在 {location} 的紧急情况")
@@ -1141,20 +1575,42 @@ class EmergencyResponseTool(Tool):
         }
         
         return {"status": "success", "data": response_plan}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    emergency_response.name = "emergency_response"
+    emergency_response.description = "处理学校内的紧急情况和突发事件"
+    emergency_response.parameters = {
+        "type": "object",
+        "properties": {
+            "emergency_type": {
+                "type": "string",
+                "description": "紧急情况类型"
+            },
+            "location": {
+                "type": "string",
+                "description": "紧急情况发生位置"
+            }
+        },
+        "required": ["emergency_type", "location"]
+    }
+    
+    return emergency_response
 
 
-class ConsultationTool(Tool):
+def get_consultation_tool() -> Callable:
     """
-    咨询顾问工具 - 提供健康咨询和医疗建议
+    获取咨询顾问工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "consultation",
-            "提供健康咨询和医疗建议"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def consultation(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        提供健康咨询和医疗建议
+        
+        Args:
+            parameters: 包含咨询问题的参数字典
+            
+        Returns:
+            咨询建议和回答
+        """
         question = parameters.get("question")
         logger.info(f"提供健康咨询，问题：{question}")
         
@@ -1166,20 +1622,38 @@ class ConsultationTool(Tool):
         }
         
         return {"status": "success", "data": advice}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    consultation.name = "consultation"
+    consultation.description = "提供健康咨询和医疗建议"
+    consultation.parameters = {
+        "type": "object",
+        "properties": {
+            "question": {
+                "type": "string",
+                "description": "咨询问题"
+            }
+        },
+        "required": ["question"]
+    }
+    
+    return consultation
 
 
-class RecipeOptimizationTool(Tool):
+def get_recipe_optimization_tool() -> Callable:
     """
-    食谱优化工具 - 优化学校食堂的食谱，确保营养均衡
+    获取食谱优化工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "recipe_optimization",
-            "优化学校食堂的食谱，确保营养均衡"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def recipe_optimization(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        优化学校食堂的食谱，确保营养均衡
+        
+        Args:
+            parameters: 包含周数的参数字典（可选）
+            
+        Returns:
+            优化后的食谱字典
+        """
         week = parameters.get("week", time.strftime("%W"))
         logger.info(f"优化第 {week} 周的食谱")
         
@@ -1192,20 +1666,39 @@ class RecipeOptimizationTool(Tool):
         }
         
         return {"status": "success", "data": recipes}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    recipe_optimization.name = "recipe_optimization"
+    recipe_optimization.description = "优化学校食堂的食谱，确保营养均衡"
+    recipe_optimization.parameters = {
+        "type": "object",
+        "properties": {
+            "week": {
+                "type": "string",
+                "description": "周数",
+                "default": time.strftime("%W")
+            }
+        },
+        "required": []
+    }
+    
+    return recipe_optimization
 
 
-class SafetyTraceabilityTool(Tool):
+def get_safety_traceability_tool() -> Callable:
     """
-    安全溯源工具 - 确保食堂食材的安全和可追溯性
+    获取安全溯源工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "safety_traceability",
-            "确保食堂食材的安全和可追溯性"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def safety_traceability(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        确保食堂食材的安全和可追溯性
+        
+        Args:
+            parameters: 包含食材名称的参数字典
+            
+        Returns:
+            食材溯源信息字典
+        """
         ingredient = parameters.get("ingredient")
         logger.info(f"追溯食材 {ingredient} 的安全信息")
         
@@ -1219,20 +1712,38 @@ class SafetyTraceabilityTool(Tool):
         }
         
         return {"status": "success", "data": traceability}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    safety_traceability.name = "safety_traceability"
+    safety_traceability.description = "确保食堂食材的安全和可追溯性"
+    safety_traceability.parameters = {
+        "type": "object",
+        "properties": {
+            "ingredient": {
+                "type": "string",
+                "description": "食材名称"
+            }
+        },
+        "required": ["ingredient"]
+    }
+    
+    return safety_traceability
 
 
-class PersonalizedMealTool(Tool):
+def get_personalized_meal_tool() -> Callable:
     """
-    个性化膳食工具 - 根据学生的特殊需求提供个性化的膳食服务
+    获取个性化膳食工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "personalized_meal",
-            "根据学生的特殊需求提供个性化的膳食服务"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def personalized_meal(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        根据学生的特殊需求提供个性化的膳食服务
+        
+        Args:
+            parameters: 包含学生ID和饮食需求的参数字典
+            
+        Returns:
+            个性化膳食计划
+        """
         student_id = parameters.get("student_id")
         dietary_needs = parameters.get("dietary_needs", [])
         logger.info(f"为学生 {student_id} 提供个性化膳食服务，需求：{dietary_needs}")
@@ -1246,20 +1757,46 @@ class PersonalizedMealTool(Tool):
         }
         
         return {"status": "success", "data": meal_plan}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    personalized_meal.name = "personalized_meal"
+    personalized_meal.description = "根据学生的特殊需求提供个性化的膳食服务"
+    personalized_meal.parameters = {
+        "type": "object",
+        "properties": {
+            "student_id": {
+                "type": "string",
+                "description": "学生ID"
+            },
+            "dietary_needs": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "饮食需求列表",
+                "default": []
+            }
+        },
+        "required": ["student_id"]
+    }
+    
+    return personalized_meal
 
 
-class IntelligentPatrolTool(Tool):
+def get_intelligent_patrol_tool() -> Callable:
     """
-    智能巡检工具 - 支持校园安全的智能巡检和监控
+    获取智能巡检工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "intelligent_patrol",
-            "支持校园安全的智能巡检和监控"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def intelligent_patrol(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        支持校园安全的智能巡检和监控
+        
+        Args:
+            parameters: 包含巡检区域的参数字典（可选）
+            
+        Returns:
+            智能巡检结果
+        """
         area = parameters.get("area", "全校")
         logger.info(f"在 {area} 进行智能巡检")
         
@@ -1273,20 +1810,39 @@ class IntelligentPatrolTool(Tool):
         }
         
         return {"status": "success", "data": patrol_result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    intelligent_patrol.name = "intelligent_patrol"
+    intelligent_patrol.description = "支持校园安全的智能巡检和监控"
+    intelligent_patrol.parameters = {
+        "type": "object",
+        "properties": {
+            "area": {
+                "type": "string",
+                "description": "巡检区域",
+                "default": "全校"
+            }
+        },
+        "required": []
+    }
+    
+    return intelligent_patrol
 
 
-class EmergencyBroadcastTool(Tool):
+def get_emergency_broadcast_tool() -> Callable:
     """
-    应急广播工具 - 在紧急情况下进行全校广播通知
+    获取应急广播工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "emergency_broadcast",
-            "在紧急情况下进行全校广播通知"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def emergency_broadcast(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        在紧急情况下进行全校广播通知
+        
+        Args:
+            parameters: 包含广播消息的参数字典
+            
+        Returns:
+            应急广播结果
+        """
         message = parameters.get("message")
         logger.info(f"发送应急广播：{message}")
         
@@ -1299,20 +1855,38 @@ class EmergencyBroadcastTool(Tool):
         }
         
         return {"status": "success", "data": broadcast_result}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    emergency_broadcast.name = "emergency_broadcast"
+    emergency_broadcast.description = "在紧急情况下进行全校广播通知"
+    emergency_broadcast.parameters = {
+        "type": "object",
+        "properties": {
+            "message": {
+                "type": "string",
+                "description": "应急广播消息内容"
+            }
+        },
+        "required": ["message"]
+    }
+    
+    return emergency_broadcast
 
 
-class VisitorManagementTool(Tool):
+def get_visitor_management_tool() -> Callable:
     """
-    访客管理工具 - 管理校园访客的登记和访问
+    获取访客管理工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "visitor_management",
-            "管理校园访客的登记和访问"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def visitor_management(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        管理校园访客的登记和访问
+        
+        Args:
+            parameters: 包含日期的参数字典（可选）
+            
+        Returns:
+            访客管理数据
+        """
         date = parameters.get("date", time.strftime("%Y-%m-%d"))
         logger.info(f"管理 {date} 的访客")
         
@@ -1323,20 +1897,39 @@ class VisitorManagementTool(Tool):
         ]
         
         return {"status": "success", "data": visitors}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    visitor_management.name = "visitor_management"
+    visitor_management.description = "管理校园访客的登记和访问"
+    visitor_management.parameters = {
+        "type": "object",
+        "properties": {
+            "date": {
+                "type": "string",
+                "description": "访客日期",
+                "default": time.strftime("%Y-%m-%d")
+            }
+        },
+        "required": []
+    }
+    
+    return visitor_management
 
 
-class DecisionCockpitTool(Tool):
+def get_decision_cockpit_tool() -> Callable:
     """
-    决策驾驶舱工具 - 为校领导提供数据可视化和决策支持
+    获取决策驾驶舱工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "decision_cockpit",
-            "为校领导提供数据可视化和决策支持"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def decision_cockpit(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        为校领导提供数据可视化和决策支持
+        
+        Args:
+            parameters: 参数字典（未使用）
+            
+        Returns:
+            决策驾驶舱数据
+        """
         logger.info("提供决策驾驶舱数据")
         
         # 模拟决策驾驶舱
@@ -1348,20 +1941,33 @@ class DecisionCockpitTool(Tool):
         }
         
         return {"status": "success", "data": dashboard}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    decision_cockpit.name = "decision_cockpit"
+    decision_cockpit.description = "为校领导提供数据可视化和决策支持"
+    decision_cockpit.parameters = {
+        "type": "object",
+        "properties": {},
+        "required": []
+    }
+    
+    return decision_cockpit
 
 
-class TrendInsightTool(Tool):
+def get_trend_insight_tool() -> Callable:
     """
-    趋势洞察工具 - 分析教育趋势和学校发展方向
+    获取趋势洞察工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "trend_insight",
-            "分析教育趋势和学校发展方向"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def trend_insight(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        分析教育趋势和学校发展方向
+        
+        Args:
+            parameters: 包含分析周期的参数字典（可选）
+            
+        Returns:
+            教育趋势洞察分析结果
+        """
         period = parameters.get("period", "学期")
         logger.info(f"分析 {period} 教育趋势")
         
@@ -1374,20 +1980,39 @@ class TrendInsightTool(Tool):
         }
         
         return {"status": "success", "data": insights}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    trend_insight.name = "trend_insight"
+    trend_insight.description = "分析教育趋势和学校发展方向"
+    trend_insight.parameters = {
+        "type": "object",
+        "properties": {
+            "period": {
+                "type": "string",
+                "description": "分析周期",
+                "default": "学期"
+            }
+        },
+        "required": []
+    }
+    
+    return trend_insight
 
 
-class ResourcePlanningTool(Tool):
+def get_resource_planning_tool() -> Callable:
     """
-    资源规划工具 - 帮助学校进行长期资源规划和分配
+    获取资源规划工具 - 返回可调用的函数
     """
-    
-    def __init__(self):
-        super().__init__(
-            "resource_planning",
-            "帮助学校进行长期资源规划和分配"
-        )
-    
-    def execute(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def resource_planning(parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        帮助学校进行长期资源规划和分配
+        
+        Args:
+            parameters: 包含规划周期的参数字典（可选）
+            
+        Returns:
+            资源规划结果
+        """
         plan_period = parameters.get("plan_period", "一年")
         logger.info(f"制定 {plan_period} 资源规划")
         
@@ -1400,6 +2025,23 @@ class ResourcePlanningTool(Tool):
         }
         
         return {"status": "success", "data": plan}
+        
+    # 为函数添加必要的元数据，使CAMEL框架能够正确识别
+    resource_planning.name = "resource_planning"
+    resource_planning.description = "帮助学校进行长期资源规划和分配"
+    resource_planning.parameters = {
+        "type": "object",
+        "properties": {
+            "plan_period": {
+                "type": "string",
+                "description": "规划周期",
+                "default": "一年"
+            }
+        },
+        "required": []
+    }
+    
+    return resource_planning
 
 
 class SchoolIntelligentSystem:

@@ -104,8 +104,8 @@ class CometMonitor:
             
             # 记录输入输出文本
             # 注意：为了保护隐私，实际应用中可能需要过滤敏感信息
-            self.experiment.log_text(f"{call_id}_prompt", prompt[:1000])  # 限制长度以避免过大的日志
-            self.experiment.log_text(f"{call_id}_response", response[:1000])
+            self.experiment.log_text(f"{call_id}_prompt {prompt[:1000]}")  # 限制长度以避免过大的日志
+            self.experiment.log_text(f"{call_id}_response {response[:1000]}")
             
             # 计算并记录令牌数（近似值）
             prompt_tokens = len(prompt.split())
