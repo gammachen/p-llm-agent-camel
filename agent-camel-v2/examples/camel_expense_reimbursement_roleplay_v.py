@@ -975,7 +975,7 @@ class ExpenseReimbursementSystem:
             
             # 获取细化后的任务
             specified_task_msg = task_specify_agent.step(task_specify_msg)
-            specified_task = specified_task_msg.content
+            specified_task = specified_task_msg.msgs[0].content
             
             # 根据当前角色类型选择工具
             tools = [self._get_policy_info_tool()]
@@ -991,12 +991,17 @@ class ExpenseReimbursementSystem:
             # 创建RolePlaying实例
             role_play_session = RolePlaying(
                 assistant_role_name=current_role_info['role_name'],
-                assistant_role_description=current_role_info['role_description'],
                 user_role_name=next_role_info['role_name'],
-                user_role_description=next_role_info['role_description'],
-                model=self.model,
-                assistant_tools=tools,
-                system_message=system_prompt,
+                assistant_agent_kwargs=dict(
+                    model=self.model,
+                    tools=tools
+                ),
+                user_agent_kwargs=dict(
+                    model=self.model
+                ),
+                task_prompt=specified_task,
+                with_task_specify=False,
+                with_task_planner=False,
             )
             
             # 保存会话实例
@@ -1015,14 +1020,24 @@ class ExpenseReimbursementSystem:
             chat_turn_limit = 5
             chat_turn_counter = 0
             
+            # 初始化对话
+            input_msg = initial_msg
+            
             # 处理多轮对话
             while chat_turn_counter < chat_turn_limit:
                 # 获取当前智能体的回复
-                response = role_play_session.step(initial_msg)
+                raw_response = role_play_session.step(input_msg)
                 
-                # 提取回复内容
-                if hasattr(response, 'msgs') and response.msgs:
-                    response_content = response.msgs[0].content
+                # 提取助手响应和用户消息
+                if isinstance(raw_response, tuple) and len(raw_response) >= 2:
+                    assistant_response = raw_response[0]
+                    user_msg = raw_response[1]
+                    
+                    # 提取助手回复内容
+                    if hasattr(assistant_response, 'msgs') and assistant_response.msgs:
+                        response_content = assistant_response.msgs[0].content
+                    else:
+                        response_content = "对话过程中出现问题"
                 else:
                     response_content = "对话过程中出现问题"
                 
@@ -1048,8 +1063,8 @@ class ExpenseReimbursementSystem:
                 
                 # 检查是否有明确的审批结果
                 if current_role in ["manager", "department_head", "financial_auditor"]:
-                    # 获取当前角色的智能体
-                    agent = role_play_session.assistant_agent
+                    # 获取当前角色的智能体（安全检查）
+                    agent = getattr(role_play_session, 'assistant_agent', None)
                     
                     # 检查是否有审批结果
                     if "<审批通过>" in response_content or "通过" in response_content or "同意" in response_content:
@@ -1087,7 +1102,7 @@ class ExpenseReimbursementSystem:
                     break
                 
                 # 准备下一轮对话的消息
-                initial_msg = BaseMessage.make_user_message(
+                input_msg = BaseMessage.make_user_message(
                     role_name=next_role_info['role_name'],
                     content=f"我是{next_role_info['role_name']}，请继续处理。"
                 )
