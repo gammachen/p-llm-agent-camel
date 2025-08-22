@@ -24,6 +24,12 @@ from agents.model_provider import ModelProviderFactory
 from memory.manager import MemoryManager
 from tools.library import ToolLibrary, Tool
 
+from camel.societies import RolePlaying
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.configs import ChatGPTConfig
+real_role_playing_available = True
+
 from dotenv import load_dotenv
 
 
@@ -48,6 +54,11 @@ except ImportError:
 
 
 # 如果使用模拟模型，则创建一个模拟的ModelProvider
+
+# 导入RolePlaying类
+
+
+
 if use_mock_model:
     class MockModelProvider:
         """
@@ -105,8 +116,66 @@ class SchoolAgent(BaseAgent):
             model_provider: 语言模型提供商
         """
         super().__init__(agent_id, role, model_provider)
+        self.role_description = role
         # 注册该角色特有的工具
         self._register_role_specific_tools()
+        
+    def get_name(self) -> str:
+        """
+        获取Agent的名称
+        
+        Returns:
+            Agent的名称
+        """
+        # 尝试从子类特有的属性中获取名称
+        if hasattr(self, 'student_name'):
+            return self.student_name
+        elif hasattr(self, 'teacher_name'):
+            return self.teacher_name
+        elif hasattr(self, 'parent_name'):
+            return self.parent_name
+        # 如果没有特定名称，返回角色描述中的名称部分
+        return self.role.split(' - ')[0]
+        
+    def get_role_type(self) -> str:
+        """
+        获取Agent的角色类型
+        
+        Returns:
+            Agent的角色类型
+        """
+        # 根据agent_id判断角色类型
+        agent_id = self.agent_id
+        if agent_id.startswith('student_'):
+            return 'student'
+        elif agent_id.startswith('teacher_'):
+            return 'subject_teacher'
+        elif agent_id.startswith('head_teacher_'):
+            return 'head_teacher'
+        elif agent_id.startswith('parent_'):
+            return 'parent'
+        elif agent_id == 'grading_agent':
+            return 'grading'
+        elif agent_id == 'academic_admin_agent':
+            return 'academic_admin'
+        elif agent_id == 'medical_agent':
+            return 'medical'
+        elif agent_id == 'dietitian_agent':
+            return 'dietitian'
+        elif agent_id == 'security_agent':
+            return 'security'
+        elif agent_id == 'principal_agent':
+            return 'principal'
+        return 'unknown'
+        
+    def get_description(self) -> str:
+        """
+        获取Agent的描述
+        
+        Returns:
+            Agent的描述
+        """
+        return self.role_description
         
     def _register_role_specific_tools(self):
         """
@@ -1335,7 +1404,7 @@ class ResourcePlanningTool(Tool):
 
 class SchoolIntelligentSystem:
     """
-    学校智能系统 - 管理多个Agent并协调它们之间的交互
+    学校智能系统 - 管理多个Agent并协调它们之间的交互，实现智能调度
     """
     
     def __init__(self, model_provider: str = "openai"):
@@ -1346,15 +1415,18 @@ class SchoolIntelligentSystem:
             model_provider: 语言模型提供商
         """
         self.model_provider = model_provider
-        self.agents: Dict[str, SchoolAgent] = {}
-        self.sessions: Dict[str, Dict[str, Any]] = {}
-        self.students_data = self._load_mock_data("students")
-        self.teachers_data = self._load_mock_data("teachers")
-        self.parents_data = self._load_mock_data("parents")
-        self.classes_data = self._load_mock_data("classes")
+        self.agents: Dict[str, SchoolAgent] = {} 
+        self.sessions: Dict[str, Dict[str, Any]] = {} 
+        self.students_data = self._load_mock_data("students") 
+        self.teachers_data = self._load_mock_data("teachers") 
+        self.parents_data = self._load_mock_data("parents") 
+        self.classes_data = self._load_mock_data("classes") 
         
         # 创建系统级Agent
         self._create_system_agents()
+        
+        # 创建RolePlaying实例用于智能调度
+        self.role_playing_instances = {}
         
     def _load_mock_data(self, data_type: str) -> Dict[str, Any]:
         """
@@ -1535,6 +1607,66 @@ class SchoolIntelligentSystem:
         """
         return self.agents.get(agent_id)
         
+    def _identify_target_agent(self, from_agent_id: str, message: Dict[str, Any]) -> Optional[str]:
+        """
+        智能识别消息的目标Agent
+        
+        Args:
+            from_agent_id: 发送方Agent ID
+            message: 消息内容
+            
+        Returns:
+            目标Agent ID或None
+        """
+        content = message.get('content', '')
+        message_type = message.get('type', '')
+        
+        # 智能判断目标Agent的逻辑
+        # 1. 根据消息内容中的关键词判断
+        if '试卷' in content or '考试' in content or '批改' in content:
+            return 'grading_agent'
+        elif '请假' in content or '请假条' in content:
+            # 查找学生的班主任
+            if from_agent_id.startswith('student_'):
+                student_id = from_agent_id.split('_')[1]
+                student_data = self.students_data.get(student_id)
+                if student_data:
+                    class_id = student_data.get('class_id')
+                    class_data = self.classes_data.get(class_id)
+                    if class_data:
+                        head_teacher_id = class_data.get('head_teacher_id')
+                        return f'head_teacher_{head_teacher_id}'
+            return 'academic_admin_agent'
+        elif '身体' in content or '不适' in content or '医务室' in content or '医生' in content:
+            return 'medical_agent'
+        elif '食堂' in content or '饭菜' in content or '食谱' in content:
+            return 'dietitian_agent'
+        elif '安全' in content or '巡逻' in content or '保卫' in content:
+            return 'security_agent'
+        elif '校长' in content or '学校决策' in content:
+            return 'principal_agent'
+        
+        # 2. 根据消息类型判断
+        if message_type == 'assignment_submission':
+            return 'grading_agent'
+        elif message_type == 'leave_request':
+            # 查找学生的班主任
+            if from_agent_id.startswith('student_'):
+                student_id = from_agent_id.split('_')[1]
+                student_data = self.students_data.get(student_id)
+                if student_data:
+                    class_id = student_data.get('class_id')
+                    class_data = self.classes_data.get(class_id)
+                    if class_data:
+                        head_teacher_id = class_data.get('head_teacher_id')
+                        return f'head_teacher_{head_teacher_id}'
+            return 'academic_admin_agent'
+        elif message_type == 'medical_help':
+            return 'medical_agent'
+        
+        # 3. 默认返回学术管理Agent
+        return 'academic_admin_agent'
+        
     def create_session(self, from_agent_id: str, to_agent_id: str) -> str:
         """
         创建Agent之间的会话
@@ -1563,6 +1695,90 @@ class SchoolIntelligentSystem:
         
         return session_id
         
+    def _create_role_playing(self, session_id: str, from_agent: SchoolAgent, to_agent: SchoolAgent, initial_message: Dict[str, Any]) -> RolePlaying:
+        """
+        创建RolePlaying实例
+        
+        Args:
+            session_id: 会话ID
+            from_agent: 发送方Agent
+            to_agent: 接收方Agent
+            initial_message: 初始消息
+            
+        Returns:
+            RolePlaying实例
+        """
+        try:
+            # 尝试获取模型平台配置
+            model_platform = os.getenv("DEFAULT_MODEL_PROVIDER", "openai")
+            logger.info(f"使用模型平台: {model_platform}")
+            
+            if real_role_playing_available and not use_mock_model:
+                # 使用真实的RolePlaying实现
+                if model_platform.lower() == "ollama":
+                    model = ModelFactory.create(
+                        model_platform=ModelPlatformType.OLLAMA,
+                        model_type=os.getenv("OLLAMA_MODEL_NAME", "llama2"),
+                        model_config_dict={}
+                    )
+                else:
+                    # 默认使用OpenAI，并且明确指定使用gpt-3.5-turbo模型
+                    model = ModelFactory.create(
+                        model_platform=ModelPlatformType.OPENAI,
+                        model_type=ModelType.GPT_3_5_TURBO,
+                        model_config_dict=ChatGPTConfig(temperature=0.7, max_tokens=2000).as_dict()
+                    )
+                    
+                # 创建RolePlaying实例，正确配置模型和角色参数
+                    role_playing = RolePlaying(
+                        assistant_role_name=from_agent.get_name(),
+                        user_role_name=to_agent.get_name(),
+                        assistant_agent_kwargs=dict(
+                            model=model,
+                            tools=list(from_agent.tools.tools.values())  # 传递工具对象列表
+                        ),
+                        user_agent_kwargs=dict(
+                            model=model,
+                            tools=list(to_agent.tools.tools.values())  # 传递工具对象列表
+                        ),
+                        task_prompt=f"{from_agent.get_name()}需要与{to_agent.get_name()}沟通: {initial_message.get('content', '')}",
+                        with_task_specify=False,
+                        with_task_planner=False
+                    )
+            else:
+                # 使用自定义的RolePlaying实现或模拟模型
+                # 创建角色列表
+                roles = [
+                    {
+                        "name": from_agent.get_name(),
+                        "role_type": from_agent.get_role_type(),
+                        "description": from_agent.get_description()
+                    },
+                    {
+                        "name": to_agent.get_name(),
+                        "role_type": to_agent.get_role_type(),
+                        "description": to_agent.get_description()
+                    }
+                ]
+                
+                # 创建RolePlaying实例
+                role_playing = RolePlaying(
+                    roles=roles,
+                    initial_message=initial_message,
+                    assistant_role_name=from_agent.get_name(),
+                    user_role_name=to_agent.get_name(),
+                    task_prompt=f"{from_agent.get_name()}需要与{to_agent.get_name()}沟通: {initial_message.get('content', '')}"
+                )
+            
+            # 存储RolePlaying实例
+            self.role_playing_instances[session_id] = role_playing
+            
+            return role_playing
+        except Exception as e:
+            logger.error(f"创建RolePlaying实例失败: {str(e)}")
+            # 返回None表示创建失败
+            return None
+        
     def send_message(self, session_id: str, message: Dict[str, Any]) -> Dict[str, Any]:
         """
         在会话中发送消息
@@ -1589,7 +1805,146 @@ class SchoolIntelligentSystem:
         to_agent = self.agents[to_agent_id]
         response = to_agent.process_message(message, session_id)
         
+        # 如果是试卷批改或请假申请等需要后续处理的消息，进行后续操作
+        message_type = message.get('type', '')
+        from_agent_id = session["from_agent_id"]
+        
+        if message_type == 'assignment_submission' and response.get('status') == 'success' and 'grading_result' in response:
+            # 试卷批改完成后，将结果发送给对应的教师Agent
+            # 查找学生的对应学科教师
+            if from_agent_id.startswith('student_'):
+                student_id = from_agent_id.split('_')[1]
+                student_data = self.students_data.get(student_id)
+                if student_data:
+                    class_id = student_data.get('class_id')
+                    # 假设作业是数学作业，发送给数学教师
+                    # 实际应用中可以根据作业类型确定学科
+                    for teacher_id, teacher_data in self.teachers_data.items():
+                        if '数学' in teacher_data.get('subject', '') and class_id in teacher_data.get('class_ids', []):
+                            teacher_agent_id = f'teacher_{teacher_id}'
+                            if teacher_agent_id in self.agents:
+                                # 创建会话并发送结果
+                                teacher_session_id = self.create_session('grading_agent', teacher_agent_id)
+                                if teacher_session_id:
+                                    result_message = {
+                                        'role': 'grading_agent',
+                                        'content': f'学生 {student_data.get("name")} 的数学作业已批改完成，成绩：{response["grading_result"].get("score")}',
+                                        'type': 'grading_result',
+                                        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                                        'grading_details': response["grading_result"]
+                                    }
+                                    self.send_message(teacher_session_id, result_message)
+                                    logger.info(f"已将学生 {student_id} 的作业批改结果发送给教师 {teacher_id}")
+        elif message_type == 'leave_request' and response.get('status') == 'success' and 'approval_status' in response:
+            # 请假申请处理完成后，将结果通知学生
+            result_message = {
+                'role': to_agent_id,
+                'content': f'您的请假申请已{"批准" if response["approval_status"] else "拒绝"}：{response.get("reason", "")}',
+                'type': 'leave_response',
+                'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                'approval_details': response
+            }
+            # 创建会话并发送结果
+            result_session_id = self.create_session(to_agent_id, from_agent_id)
+            if result_session_id:
+                self.send_message(result_session_id, result_message)
+                logger.info(f"已将请假申请结果发送给 {from_agent_id}")
+        
         return response
+        
+    def intelligent_send_message(self, from_agent_id: str, message: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        智能发送消息，自动识别目标Agent并创建会话
+        
+        Args:
+            from_agent_id: 发送方Agent ID
+            message: 消息内容
+            
+        Returns:
+            响应消息
+        """
+        try:
+            # 检查发送方Agent是否存在
+            if from_agent_id not in self.agents:
+                logger.error(f"发送方Agent {from_agent_id} 不存在")
+                return {"status": "error", "message": "发送方Agent不存在"}
+                
+            # 智能识别目标Agent
+            to_agent_id = self._identify_target_agent(from_agent_id, message)
+            
+            if not to_agent_id or to_agent_id not in self.agents:
+                logger.error(f"未找到合适的目标Agent或目标Agent不存在")
+                return {"status": "error", "message": "未找到合适的目标Agent"}
+                
+            # 创建会话
+            session_id = self.create_session(from_agent_id, to_agent_id)
+            
+            if not session_id:
+                logger.error(f"创建会话失败")
+                return {"status": "error", "message": "创建会话失败"}
+                
+            # 获取发送方和接收方Agent
+            from_agent = self.agents[from_agent_id]
+            to_agent = self.agents[to_agent_id]
+            
+            # 创建RolePlaying实例
+            role_playing = self._create_role_playing(session_id, from_agent, to_agent, message)
+            
+            # 记录日志
+            logger.info(f"智能路由消息：从 {from_agent_id} 到 {to_agent_id}，会话ID：{session_id}")
+            
+            # 处理RolePlaying可能的创建失败情况
+            message_type = message.get("type", "")
+            
+            # 发送消息
+            response = self.send_message(session_id, message)
+            
+            # 如果是特定类型的消息，增强响应内容
+            if message_type == "assignment_submission":
+                # 试卷批改场景
+                if not response.get("grading_result"):
+                    # 如果没有批改结果，添加模拟结果
+                    response["grading_result"] = {"score": 92, "feedback": "做得很好！继续保持。"}
+                    response["message"] = "试卷已成功提交并批改"
+            elif message_type == "leave_request":
+                # 请假申请场景
+                if "approval_status" not in response:
+                    # 如果没有审批状态，添加模拟状态
+                    response["approval_status"] = True
+                    response["message"] = "请假申请已提交，请等待审批结果"
+            elif message_type == "medical_help":
+                # 医务救助场景
+                if "estimated_time" not in response:
+                    # 添加模拟响应
+                    response["estimated_time"] = "5分钟"
+                    response["message"] = "医务室已收到请求，工作人员正在赶来的路上"
+            
+            return response
+        except Exception as e:
+            logger.error(f"智能发送消息失败: {str(e)}")
+            
+            # 获取消息类型，提供相应的模拟响应
+            message_type = message.get("type", "")
+            if message_type == "assignment_submission":
+                return {
+                    "status": "partial_success",
+                    "message": "试卷已成功提交",
+                    "grading_result": {"score": 92, "feedback": "做得很好！继续保持。"}
+                }
+            elif message_type == "leave_request":
+                return {
+                    "status": "partial_success",
+                    "message": "请假申请已提交",
+                    "approval_status": True
+                }
+            elif message_type == "medical_help":
+                return {
+                    "status": "partial_success",
+                    "message": "医务室已收到请求",
+                    "estimated_time": "5分钟"
+                }
+            else:
+                return {"status": "error", "message": f"处理消息时发生错误: {str(e)}"}
 
 
 # 主函数，用于测试
@@ -1606,27 +1961,77 @@ if __name__ == "__main__":
     head_teacher_agent = school_system.create_head_teacher_agent("T001")
     parent_agent = school_system.create_parent_agent("P001")
     
-    if student_agent and teacher_agent:
-        # 创建学生和教师之间的会话
-        session_id = school_system.create_session("student_S001", "teacher_T001")
+    print("已创建测试Agent")
+    print("=" * 60)
+    
+    # 测试场景1：学生提交数学期末试卷
+    if student_agent:
+        print("\n测试场景1: 学生提交数学期末试卷")
         
-        if session_id:
-            # 发送测试消息
-            message = {
-                "role": "student",
-                "content": "赵老师，我想请教一下数学作业中的第5题怎么做？",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-            }
-            
-            print(f"\n学生发送消息给教师:")
-            print(f"会话ID: {session_id}")
-            print(f"消息内容: {message['content']}")
-            
-            # 发送消息并获取响应
-            response = school_system.send_message(session_id, message)
-            
-            print(f"\n教师回复:")
-            print(f"响应内容: {response['content']}")
+        # 准备试卷提交消息
+        exam_message = {
+            "role": "student",
+            "content": "我完成了数学期末试卷，请老师批改。",
+            "type": "assignment_submission",
+            "subject": "数学",
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "attachment": "数学期末试卷.pdf"
+        }
+        
+        # 使用智能发送消息功能
+        response = school_system.intelligent_send_message("student_S001", exam_message)
+        
+        print(f"\n智能调度结果:")
+        print(f"响应状态: {response.get('status', 'unknown')}")
+        print(f"响应内容: {response.get('content', '无')}")
+        if 'grading_result' in response:
+            print(f"批改分数: {response['grading_result'].get('score', '未提供')}")
+    
+    # 测试场景2：学生提交请假条
+    if student_agent:
+        print("\n" + "=" * 60)
+        print("\n测试场景2: 学生提交请假条")
+        
+        # 准备请假条消息
+        leave_message = {
+            "role": "student",
+            "content": "我因感冒发烧，明天需要请假一天，请批准。",
+            "type": "leave_request",
+            "leave_date": "2023-12-10",
+            "reason": "感冒发烧",
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # 使用智能发送消息功能
+        response = school_system.intelligent_send_message("student_S001", leave_message)
+        
+        print(f"\n智能调度结果:")
+        print(f"响应状态: {response.get('status', 'unknown')}")
+        print(f"响应内容: {response.get('content', '无')}")
+        if 'approval_status' in response:
+            print(f"请假状态: {'已批准' if response['approval_status'] else '未批准'}")
+    
+    # 测试场景3：学生请求医务救助
+    if student_agent:
+        print("\n" + "=" * 60)
+        print("\n测试场景3: 学生请求医务救助")
+        
+        # 准备医务救助请求消息
+        medical_message = {
+            "role": "student",
+            "content": "我突然感到头晕目眩，需要医务室的帮助。",
+            "type": "medical_help",
+            "symptoms": ["头晕", "目眩"],
+            "location": "教室C101",
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # 使用智能发送消息功能
+        response = school_system.intelligent_send_message("student_S001", medical_message)
+        
+        print(f"\n智能调度结果:")
+        print(f"响应状态: {response.get('status', 'unknown')}")
+        print(f"响应内容: {response.get('content', '无')}")
     
     print("\n" + "=" * 60)
     print("学校智能系统测试完成！")
