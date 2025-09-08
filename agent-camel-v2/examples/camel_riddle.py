@@ -58,11 +58,13 @@ def create_riddle_game(model) -> Dict[str, Any]:
     """
     print("🎮 正在创建脑筋急转弯游戏...")
     
-    # 创建角色扮演会话
+    # 创建角色扮演会话（使用简洁参数）
     role_play_session = RolePlaying(
         assistant_role_name="AI出题助手",
         user_role_name="参赛者",
-        task_prompt="进行脑筋急转弯问答游戏。AI助手（出题者）必须先出一个脑筋急转弯题目，然后等待参赛者回答。参赛者必须直接回答问题，不要提出新问题。每轮格式：AI出题→参赛者回答→AI公布答案并评判。",
+        assistant_agent_kwargs=dict(model=model),
+        user_agent_kwargs=dict(model=model),
+        task_prompt="脑筋急转弯游戏：AI助手出题，参赛者答题",
         with_task_specify=False,
         output_language='中文'
     )
@@ -90,18 +92,24 @@ def play_riddle_game() -> Dict[str, Any]:
     """
     print("🎯 开始脑筋急转弯游戏！")
     
-    # 设置模型 - 使用OpenAI GPT-3.5-turbo
-    print("初始化OpenAI模型")
-    try:
+    # 设置模型
+    model_platform = os.getenv("DEFAULT_MODEL_PROVIDER", "openai")
+    print(f"使用模型平台: {model_platform}")
+    
+    if model_platform.lower() == "ollama":
+        print("初始化Ollama模型")
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OLLAMA,
+            model_type=os.getenv("OLLAMA_MODEL_NAME", "qwen2"),
+            model_config_dict={}
+        )
+    else:
+        print("初始化OpenAI模型")
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_3_5_TURBO,
-            model_config_dict={'temperature': 0.8, 'max_tokens': 500}
+            model_config_dict=ChatGPTConfig(temperature=0.8, max_tokens=2000).as_dict()
         )
-    except Exception as e:
-        print(f"模型初始化失败: {e}")
-        print("使用备用模拟模式...")
-        return simulate_riddle_game()
     
     # 创建游戏会话
     game_data = create_riddle_game(model)
@@ -217,61 +225,6 @@ def play_riddle_game() -> Dict[str, Any]:
         },
         "game_rounds": game_rounds,
         "status": "completed"
-    }
-
-def simulate_riddle_game() -> Dict[str, Any]:
-    """
-    模拟脑筋急转弯游戏，用于演示角色分配修复
-    """
-    print("🎯 开始模拟脑筋急转弯游戏！")
-    
-    # 模拟数据展示角色分配正确
-    sample_rounds = [
-        {
-            "round": 1,
-            "question": "脑筋急转弯：什么东西越洗越脏？",
-            "answer": "水",
-            "is_correct": True
-        },
-        {
-            "round": 2,
-            "question": "脑筋急转弯：小明从不念书，为什么还能成为模范生？",
-            "answer": "他是聋哑学生",
-            "is_correct": True
-        },
-        {
-            "round": 3,
-            "question": "脑筋急转弯：什么东西不能吃？",
-            "answer": "亏",
-            "is_correct": True
-        }
-    ]
-    
-    total_rounds = len(sample_rounds)
-    correct_answers = sum(1 for r in sample_rounds if r["is_correct"])
-    correct_rate = correct_answers / total_rounds
-    
-    print("\n🎮 模拟游戏结果：")
-    for round_data in sample_rounds:
-        print(f"\n📝 第{round_data['round']}轮题目：")
-        print(f"{round_data['question']}")
-        print(f"💡 参赛者回答：{round_data['answer']}")
-        print(f"✅ 结果：{'正确' if round_data['is_correct'] else '错误'}")
-    
-    print(f"\n📊 总轮次：{total_rounds}")
-    print(f"✅ 正确答题：{correct_answers}")
-    print(f"📈 正确率：{correct_rate:.1%}")
-    
-    return {
-        "game_summary": {
-            "total_rounds": total_rounds,
-            "correct_answers": correct_answers,
-            "correct_rate": correct_rate,
-            "grade": "优秀",
-            "comment": "角色分配已修复！AI助手正确出题，参赛者正确回答。"
-        },
-        "game_rounds": sample_rounds,
-        "status": "simulated"
     }
 
 def synthesize_results(results: Dict[str, str], user_request: str) -> str:
