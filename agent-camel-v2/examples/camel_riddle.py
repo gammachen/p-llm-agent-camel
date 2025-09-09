@@ -58,13 +58,34 @@ def create_riddle_game(model) -> Dict[str, Any]:
     """
     print("🎮 正在创建脑筋急转弯游戏...")
     
-    # 创建角色扮演会话（使用简洁参数）
+    # 创建角色扮演会话（使用CAMEL框架的标准方式）
+    task_prompt = """进行脑筋急转弯问答游戏。
+
+AI助手（出题者）的明确指令：
+- 你是出题者，必须主动提出脑筋急转弯题目
+- 每轮只提出一个具体的问题，不要要求对方出题
+- 出题后直接等待对方回答
+- 收到答案后公布正确答案并评判
+- 示例格式："脑筋急转弯：什么东西越洗越脏？"
+
+参赛者（答题者）的明确指令：
+- 你是答题者，必须直接回答问题
+- 不要提出任何要求或询问，只回答问题
+- 答案要简洁直接，不要反问
+- 示例回答："水"
+
+游戏规则：
+1. AI助手必须主动出题
+2. 参赛者必须直接回答题目
+3. 禁止角色互换或混淆
+4. 每轮必须完成：出题→回答→评判"""
+    
     role_play_session = RolePlaying(
         assistant_role_name="AI出题助手",
         user_role_name="参赛者",
         assistant_agent_kwargs=dict(model=model),
         user_agent_kwargs=dict(model=model),
-        task_prompt="脑筋急转弯游戏：AI助手出题，参赛者答题",
+        task_prompt=task_prompt,
         with_task_specify=False,
         output_language='中文'
     )
@@ -124,6 +145,10 @@ def play_riddle_game() -> Dict[str, Any]:
     print("🎮 正在启动游戏对话...")
     input_msg = game_session.init_chat()
     
+    # 确保AI助手首先出题
+    if input_msg and hasattr(input_msg, 'content'):
+        print(f"🎯 游戏初始化完成，AI助手准备出题...")
+    
     # 游戏主循环
     while current_round < MAX_ROUNDS:
         current_round += 1
@@ -132,6 +157,11 @@ def play_riddle_game() -> Dict[str, Any]:
         # AI助手出题
         print("🤖 AI助手正在出题...")
         ai_response, user_response = game_session.step(input_msg)
+        
+        # 验证响应格式
+        if not ai_response or not user_response:
+            print("❌ 获取响应失败")
+            break
         
         # 检查游戏状态
         if ai_response.terminated or user_response.terminated:
@@ -146,11 +176,24 @@ def play_riddle_game() -> Dict[str, Any]:
             print("❌ 无法获取对话内容")
             break
             
+        # 清理和验证内容
+        ai_content = str(ai_message.content).strip()
+        user_content = str(user_message.content).strip()
+        
+        # 检查角色行为
+        if "请提供" in user_content or "请出题" in user_content or "我需要" in user_content:
+            print("⚠️ 检测到参赛者角色混淆，尝试纠正...")
+            user_content = "让我重新回答：" + user_content.replace("请提供", "").replace("请出题", "").replace("我需要", "")
+        
         # 打印题目和答案
         print(f"\n📝 第 {current_round} 轮题目：")
-        print(f"{ai_message.content}")
+        print(f"{ai_content}")
         print(f"\n💡 参赛者回答：")
-        print(f"{user_message.content}")
+        print(f"{user_content}")
+        
+        # 更新消息内容
+        ai_message.content = ai_content
+        user_message.content = user_content
         
         # 解析这轮的结果
         round_result = {
