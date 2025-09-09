@@ -1,6 +1,6 @@
 """
-使用官方CAMEL-AI框架的脑筋急转弯游戏示例
-Riddle game example using official CAMEL-AI framework
+脑筋急转弯游戏示例
+Riddle game example using CAMEL-AI framework
 
 本脚本将旅行规划功能改造为脑筋急转弯游戏，包含两个AI角色：
 - AI助手：负责出题和核对答案
@@ -42,8 +42,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 游戏配置常量
-MAX_ROUNDS = 30  # 最大游戏轮次
-MIN_ROUNDS = 20  # 最小游戏轮次
+MAX_ROUNDS = 10  # 最大游戏轮次
+MIN_ROUNDS = 5  # 最小游戏轮次
 CORRECT_RATE_THRESHOLD = 0.5  # 正确率阈值
 
 def create_riddle_game(model) -> Dict[str, Any]:
@@ -62,11 +62,12 @@ def create_riddle_game(model) -> Dict[str, Any]:
     task_prompt = """进行脑筋急转弯问答游戏。
 
 AI助手（出题者）的明确指令：
-- 你是出题者，必须主动提出脑筋急转弯题目
+- 你是出题者，必须主动提出脑筋急转弯题目与答案
 - 每轮只提出一个具体的问题，不要要求对方出题
 - 出题后直接等待对方回答
-- 收到答案后公布正确答案并评判
-- 示例格式："脑筋急转弯：什么东西越洗越脏？"
+- 输出问题和答案的格式必须是Json格式，key为"question"和"answer"
+- 示例格式：{"question": "什么东西越洗越脏？", "answer": "水"}
+- 必须严格按照Json格式输出，不能有任何额外的文本
 
 参赛者（答题者）的明确指令：
 - 你是答题者，必须直接回答问题
@@ -78,7 +79,7 @@ AI助手（出题者）的明确指令：
 1. AI助手必须主动出题
 2. 参赛者必须直接回答题目
 3. 禁止角色互换或混淆
-4. 每轮必须完成：出题→回答→评判"""
+4. 每轮必须完成：出题→回答"""
     
     role_play_session = RolePlaying(
         assistant_role_name="AI出题助手",
