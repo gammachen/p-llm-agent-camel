@@ -1,6 +1,6 @@
 """
-通用角色扮演Agent构建器
-基于 riddle_complete.py 规范格式
+通用角色扮演Agent构建器 - 无警告版
+基于 riddle_complete.py 规范格式，临时关闭CAMEL框架警告
 
 功能：
 - 动态生成基于用户输入主题的AI助手和参赛者角色
@@ -11,11 +11,14 @@
 使用方法：
 python examples/universal_roleplay_agent.py
 然后输入主题如：三国历史、量子力学、杭州历史文化等
+
+警告：已临时关闭CAMEL框架的上下文截断和令牌预算警告
 """
 import os
 import json
 import re
 import time
+import logging
 from typing import Dict, List, Any
 from dotenv import load_dotenv
 
@@ -24,6 +27,10 @@ from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.messages import BaseMessage
+
+# 临时关闭CAMEL框架警告
+logging.getLogger('camel.camel.memories.context_creators.score_based').setLevel(logging.ERROR)
+logging.getLogger('camel.camel.agents.chat_agent').setLevel(logging.ERROR)
 
 load_dotenv()
 
@@ -36,22 +43,22 @@ class UniversalRoleplayGame:
         self.total_rounds = 0
         self.correct_answers = 0
         
-        # 设置模型
+        # 设置模型 - 减少令牌使用
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_3_5_TURBO,
-            model_config_dict=ChatGPTConfig(temperature=0.7, max_tokens=800).as_dict()
+            model_config_dict=ChatGPTConfig(temperature=0.7, max_tokens=500).as_dict()
         )
         
-        # 动态生成角色定义
+        # 更简洁的系统消息
         self.assistant = ChatAgent(
             model=model,
-            system_message=self.generate_assistant_prompt(topic)
+            system_message=f"你是{topic}专家，出题格式：{{\"q\":\"题\",\"a\":\"答\"}}"
         )
         
         self.contestant = ChatAgent(
             model=model,
-            system_message=self.generate_contestant_prompt(topic)
+            system_message=f"你是{topic}答题者，直接回答"
         )
     
     def generate_assistant_prompt(self, topic: str) -> str:
@@ -81,49 +88,31 @@ class UniversalRoleplayGame:
 
     def extract_json_riddle(self, text: str) -> Dict[str, str]:
         """从文本中提取JSON格式的题目和答案"""
-        print("📝 原始文本：", text)
-        
         try:
-            # 尝试直接解析完整JSON
+            # 支持简写格式q和a
             data = json.loads(text.strip())
+            if 'q' in data and 'a' in data:
+                return {"question": data['q'], "answer": data['a']}
             if 'question' in data and 'answer' in data:
                 return data
-        except json.JSONDecodeError:
+        except:
             pass
         
-        # 尝试提取JSON块
-        json_pattern = r'\{[^}]*"question"[^}]*"answer"[^}]*\}'
-        matches = re.findall(json_pattern, text, re.IGNORECASE)
-        if matches:
-            try:
-                return json.loads(matches[0])
-            except json.JSONDecodeError:
-                pass
-        
-        # 手动解析 - 更健壮的解析
+        # 手动解析
         lines = [line.strip() for line in text.strip().split('\n') if line.strip()]
         question = answer = ""
         
         for line in lines:
             line_lower = line.lower()
-            if any(key in line_lower for key in ['问题:', '题目:', 'question:']):
-                parts = line.split(':', 1)
-                if len(parts) > 1:
-                    question = parts[1].strip()
-                else:
-                    question = line
-            elif any(key in line_lower for key in ['答案:', 'answer:']):
-                parts = line.split(':', 1)
-                if len(parts) > 1:
-                    answer = parts[1].strip()
-                else:
-                    answer = line
+            if any(key in line_lower for key in ['q:', '题:', 'question:']):
+                question = line.split(':', 1)[1].strip('" }')
+            elif any(key in line_lower for key in ['a:', '答:', 'answer:']):
+                answer = line.split(':', 1)[1].strip('" }')
         
-        # 如果没有找到明确的问题，使用第一行
         if not question and lines:
             question = lines[0]
-            if len(lines) > 1:
-                answer = lines[1]
+        if not answer and len(lines) > 1:
+            answer = lines[1]
         
         return {"question": question, "answer": answer}
     
@@ -140,34 +129,26 @@ class UniversalRoleplayGame:
         print(f"\n🎯 第{round_num}轮 - {self.topic}")
         
         # AI助手出题
-        print(f"🤖 AI助手({self.topic}专家)正在出题...")
-        question_msg = BaseMessage.make_user_message("系统", f"请出第{round_num}个关于{self.topic}的题目，必须输出JSON格式")
+        question_msg = BaseMessage.make_user_message("系统", f"出{round_num}题")
         ai_response = self.assistant.step(question_msg)
         
         if not ai_response.msgs:
-            print("❌ AI助手未响应")
             return None
         
-        # 解析题目
-        ai_text = ai_response.msgs[0].content
-        riddle = self.extract_json_riddle(ai_text)
-        
+        riddle = self.extract_json_riddle(ai_response.msgs[0].content)
         if not riddle['question'] or not riddle['answer']:
-            print("❌ 题目格式错误")
             return None
         
         question = riddle['question']
         correct_answer = riddle['answer']
         
-        print(f"📝 问题: {question}")
+        print(f"📝 {question}")
         
         # 参赛者答题
-        print(f"🧑‍🎓 参赛者({self.topic}答题者)正在答题...")
         answer_msg = BaseMessage.make_user_message("出题者", question)
         user_response = self.contestant.step(answer_msg)
         
         if not user_response.msgs:
-            print("❌ 参赛者未响应")
             return None
         
         user_answer = user_response.msgs[0].content.strip()
@@ -191,73 +172,33 @@ class UniversalRoleplayGame:
             self.correct_answers += 1
         
         # 显示结果
-        print(f"💡 标准答案: {correct_answer}")
-        print(f"🎯 用户回答: {user_answer} ({'✅正确' if is_correct else '❌错误'})")
+        print(f"💡 {correct_answer}")
+        print(f"🎯 {user_answer} ({'✅' if is_correct else '❌'})")
         
         return result
     
-    def play_game(self, max_rounds: int = 12, min_rounds: int = 6, threshold: float = 0.4) -> Dict[str, Any]:
+    def play_game(self, max_rounds: int = 4, min_rounds: int = 3, threshold: float = 0.4) -> Dict[str, Any]:
         """运行完整游戏"""
-        print("=" * 70)
-        print(f"🎯 {self.topic}知识问答游戏开始！")
-        print(f"🤖 AI{self.topic}专家 vs 🧑‍🎓 {self.topic}答题者")
-        print("=" * 70)
+        print(f"\n🎮 {self.topic}问答")
         
-        for round_num in range(1, max_rounds + 1):
-            result = self.play_round(round_num)
-            if not result:
-                continue
-            
-            # 显示当前统计
-            rate = self.correct_answers / self.total_rounds
-            print(f"📊 当前正确率: {rate:.1%} ({self.correct_answers}/{self.total_rounds})")
-            
-            # 检查结束条件
-            if round_num >= min_rounds and rate < threshold:
-                print(f"\n⏰ 游戏结束！正确率 {rate:.1%} 低于 {threshold:.0%}")
-                break
-                
-            time.sleep(1)
+        try:
+            for round_num in range(1, max_rounds + 1):
+                result = self.play_round(round_num)
+                if not result:
+                    continue
         
-        # 最终结果
-        print(f"\n{'='*60}")
-        print("🏆 游戏结束")
-        print("="*60)
+        except KeyboardInterrupt:
+            pass
         
-        rate = self.correct_answers / self.total_rounds if self.total_rounds > 0 else 0
-        
-        # 成绩评级 - 根据主题调整评级标准
-        if rate >= 0.8:
-            grade, comment = "优秀", f"{self.topic}知识大师！"
-        elif rate >= 0.6:
-            grade, comment = "良好", f"{self.topic}知识不错！"
-        elif rate >= 0.4:
-            grade, comment = "及格", f"继续学习{self.topic}！"
-        else:
-            grade, comment = "需要努力", f"多学习{self.topic}知识！"
-        
-        print(f"主题: {self.topic}")
-        print(f"总轮次: {self.total_rounds}")
-        print(f"正确数: {self.correct_answers}")
-        print(f"正确率: {rate:.1%}")
-        print(f"等级: {grade}")
-        print(f"评语: {comment}")
-        
-        # 显示详细记录（只显示最近5轮）
-        if self.rounds:
-            print(f"\n📋 详细记录（最近5轮）：")
-            recent_rounds = self.rounds[-5:] if len(self.rounds) > 5 else self.rounds
-            for r in recent_rounds:
-                status = "✅" if r['correct'] else "❌"
-                print(f"  第{r['round']:2d}轮: {r['question'][:40]}... → {r['user_answer'][:20]} {status}")
+        # 结果统计
+        accuracy = self.correct_answers / self.total_rounds if self.total_rounds > 0 else 0
+        print(f"\n📊 {self.correct_answers}/{self.total_rounds}")
         
         return {
             'topic': self.topic,
             'total_rounds': self.total_rounds,
             'correct_answers': self.correct_answers,
-            'correct_rate': rate,
-            'grade': grade,
-            'comment': comment,
+            'accuracy': accuracy,
             'rounds': self.rounds
         }
 
